@@ -2,4 +2,6 @@
 
 set -e
 
-dapp --use solc:0.7.5 test
+. ~/.nix-profile/etc/profile.d/nix.sh
+export DAPP_SOLC=/usr/bin/solc
+dapp test
