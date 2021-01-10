@@ -4,17 +4,15 @@ pragma solidity ^0.8.0;
 contract AcuityAtomicSwap {
 
     struct SellOrderLinked {
-        address seller;
-        uint amount;
-        uint price;
-        bytes32 next;
+        address seller;     // access control
+        uint amount;        // amount available
+        bytes32 next;       // orderId of next sell order
     }
 
     struct BuyLockLinked {
-        address buyer;
-        address seller;
-        uint amount;
-        bytes32 next;
+        address seller;     // address payment will be sent to
+        uint amount;        // amount to send
+        bytes32 next;       // hashed secret of next buy lock for the order
     }
 
     mapping (bytes32 => SellOrderLinked) orderIdSellOrder;
@@ -31,16 +29,18 @@ contract AcuityAtomicSwap {
         SellOrderLinked storage order = orderIdSellOrder[orderId];
         order.seller = msg.sender;
         order.amount = msg.value;
-        order.price = price;
+
+        // log price
     }
 
     function lockBuy(bytes32 orderId, bytes32 hashedSecret, address seller) payable external {
         BuyLockLinked storage lock = hashedSecretBuyLock[hashedSecret];
-        lock.buyer = msg.sender;
         lock.seller = seller;
         lock.amount = msg.value;
 
         orderIdTopBuyLock[orderId] = hashedSecret;
+
+        // log buyer
     }
 
     function lockSell(bytes32 orderId, bytes32 hashedSecret, uint amount) external {
