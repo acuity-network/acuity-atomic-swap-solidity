@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 contract AcuityAtomicSwap {
 
     struct SellOrderLinked {
-        address seller;     // access control
         uint amount;        // amount available
         bytes32 next;       // orderId of next sell order
     }
@@ -23,14 +22,45 @@ contract AcuityAtomicSwap {
 
     mapping (bytes32 => uint) hashedSecretSellLock;
 
-    function createOrder(bytes32 nonce, uint price) payable external returns (bytes32 orderId) {
-        orderId = keccak256(abi.encodePacked(nonce));
-
+    function createOrder(uint price) payable external returns (bytes32 orderId) {
+        // Get orderId.
+        orderId = keccak256(abi.encodePacked(msg.sender, price));
+        // Get order.
         SellOrderLinked storage order = orderIdSellOrder[orderId];
-        order.seller = msg.sender;
-        order.amount = msg.value;
+        // Get total.
+        uint total = order.amount + msg.value;
 
-        // log price
+        bytes32 prev = 0;
+        bytes32 next = orderIdSellOrder[0].next;
+        while (total <= orderIdSellOrder[next].amount) {
+            prev = next;
+            next = orderIdSellOrder[prev].next;
+        }
+        bool replace = false;
+        // Is order already in the list?
+        if (order.amount > 0) {
+            // Find correct old previous.
+            bytes32 oldPrev = 0;
+            while (orderIdSellOrder[oldPrev].next != orderId) {
+                oldPrev = orderIdSellOrder[oldPrev].next;
+            }
+            // Is it in the same position?
+            if (prev == oldPrev) {
+                replace = true;
+            }
+            else {
+                // Remove sender from current position.
+                orderIdSellOrder[oldPrev].next = order.next;
+            }
+        }
+        if (!replace) {
+            // Insert into linked list.
+            orderIdSellOrder[prev].next = orderId;
+            orderIdSellOrder[orderId].next = next;
+        }
+        // Update the amount.
+        order.amount = total;
+        // log info
     }
 
     function lockBuy(bytes32 orderId, bytes32 hashedSecret, address seller) payable external {
