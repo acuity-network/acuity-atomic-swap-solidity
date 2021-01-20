@@ -32,6 +32,8 @@ contract AcuityAtomicSwap {
     function lockSell(uint price, bytes32 hashedSecret, uint amount) external {
         // Get orderId.
         bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
+        // Check there is enough.
+        require (orderIdAmount[orderId] >= amount, "Sell order not big enough.");
         // Move amount.
         orderIdAmount[orderId] -= amount;
         hashedSecretSellLock[hashedSecret] = amount;
