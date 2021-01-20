@@ -5,13 +5,13 @@ contract AcuityAtomicSwap {
 
     struct BuyLock {
         address seller;     // address payment will be sent to
-        uint amount;        // amount to send
+        uint value;        // value to send
         uint timeout;
     }
 
     struct SellLock {
         bytes32 orderId;
-        uint amount;
+        uint value;
         uint timeout;
     }
 
@@ -74,7 +74,7 @@ contract AcuityAtomicSwap {
     function lockBuy(bytes32 hashedSecret, address seller, uint timeout, bytes32 orderId) payable external {
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         lock.seller = seller;
-        lock.amount = msg.value;
+        lock.value = msg.value;
         lock.timeout = timeout;
         // Log info.
         emit LockBuy(orderId, hashedSecret, seller, msg.value, timeout);
@@ -83,18 +83,18 @@ contract AcuityAtomicSwap {
     /*
      * Called by seller.
      */
-    function lockSell(uint price, bytes32 hashedSecret, uint timeout, uint amount) external {
+    function lockSell(uint price, bytes32 hashedSecret, uint timeout, uint value) external {
         // Get orderId.
         bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
         // Check there is enough.
-        require (orderIdAmount[orderId] >= amount, "Sell order not big enough.");
-        // Move amount.
-        orderIdAmount[orderId] -= amount;
-        hashedSecretSellLock[hashedSecret].amount = amount;
+        require (orderIdAmount[orderId] >= value, "Sell order not big enough.");
+        // Move value.
+        orderIdAmount[orderId] -= value;
+        hashedSecretSellLock[hashedSecret].value = value;
         hashedSecretSellLock[hashedSecret].timeout = timeout;
         hashedSecretSellLock[hashedSecret].orderId = orderId;
         // Log info.
-        emit LockSell(orderId, hashedSecret, msg.sender, amount, timeout);
+        emit LockSell(orderId, hashedSecret, msg.sender, value, timeout);
     }
 
     /*
@@ -104,7 +104,7 @@ contract AcuityAtomicSwap {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         require (hashedSecretSellLock[hashedSecret].timeout < block.timestamp, "Lock timed out.");
         address _sender = msg.sender;
-        uint value = hashedSecretSellLock[hashedSecret].amount;
+        uint value = hashedSecretSellLock[hashedSecret].value;
         delete hashedSecretSellLock[hashedSecret];
         assembly {
             pop(call(not(0), _sender, value, 0, 0, 0, 0))
@@ -121,11 +121,11 @@ contract AcuityAtomicSwap {
         bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
         require (hashedSecretSellLock[hashedSecret].orderId == orderId, "Wrong orderId.");
         require (hashedSecretSellLock[hashedSecret].timeout >= block.timestamp, "Lock not timed out.");
-        uint amount = hashedSecretSellLock[hashedSecret].amount;
-        orderIdAmount[orderId] += amount;
+        uint value = hashedSecretSellLock[hashedSecret].value;
+        orderIdAmount[orderId] += value;
         delete hashedSecretSellLock[hashedSecret];
         // Log info.
-        emit TimeoutSell(hashedSecret, orderId, amount);
+        emit TimeoutSell(hashedSecret, orderId, value);
     }
 
     /*
@@ -135,7 +135,7 @@ contract AcuityAtomicSwap {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         require (hashedSecretBuyLock[hashedSecret].timeout < block.timestamp, "Lock timed out.");
         address seller = hashedSecretBuyLock[hashedSecret].seller;
-        uint value = hashedSecretBuyLock[hashedSecret].amount;
+        uint value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
         assembly {
             pop(call(not(0), seller, value, 0, 0, 0, 0))
@@ -151,7 +151,7 @@ contract AcuityAtomicSwap {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         require (hashedSecretBuyLock[hashedSecret].timeout >= block.timestamp, "Lock not timed out.");
         address dest = msg.sender;
-        uint value = hashedSecretBuyLock[hashedSecret].amount;
+        uint value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
         assembly {
             pop(call(not(0), dest, value, 0, 0, 0, 0))
