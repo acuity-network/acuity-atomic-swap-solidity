@@ -3,16 +3,12 @@ pragma solidity ^0.8.0;
 
 contract AcuityAtomicSwap {
 
-    struct SellOrder {
-        uint amount;        // amount available
-    }
-
     struct BuyLock {
         address seller;     // address payment will be sent to
         uint amount;        // amount to send
     }
 
-    mapping (bytes32 => SellOrder) orderIdSellOrder;
+    mapping (bytes32 => uint) orderIdAmount;
 
     mapping (bytes32 => BuyLock) hashedSecretBuyLock;
 
@@ -22,7 +18,7 @@ contract AcuityAtomicSwap {
         // Get orderId.
         orderId = keccak256(abi.encodePacked(msg.sender, price));
         // Get order.
-        orderIdSellOrder[orderId].amount += msg.value;
+        orderIdAmount[orderId] += msg.value;
         // log info
     }
 
@@ -37,12 +33,8 @@ contract AcuityAtomicSwap {
         // Get orderId.
         bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
         // Move amount.
-        orderIdSellOrder[orderId].amount -= amount;
+        orderIdAmount[orderId] -= amount;
         hashedSecretSellLock[hashedSecret] = amount;
-
-        if (orderIdSellOrder[orderId].amount == 0) {
-            delete orderIdSellOrder[orderId];
-        }
     }
 
     function unlockSell(bytes32 secret) external {
