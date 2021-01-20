@@ -3,22 +3,18 @@ pragma solidity ^0.8.0;
 
 contract AcuityAtomicSwap {
 
-    struct SellOrderLinked {
+    struct SellOrder {
         uint amount;        // amount available
-        bytes32 next;       // orderId of next sell order
     }
 
-    struct BuyLockLinked {
+    struct BuyLock {
         address seller;     // address payment will be sent to
         uint amount;        // amount to send
-        bytes32 next;       // hashed secret of next buy lock for the order
     }
 
-    mapping (bytes32 => SellOrderLinked) orderIdSellOrder;
+    mapping (bytes32 => SellOrder) orderIdSellOrder;
 
-    mapping (bytes32 => BuyLockLinked) hashedSecretBuyLock;
-
-    mapping (bytes32 => bytes32) orderIdTopBuyLock;
+    mapping (bytes32 => BuyLock) hashedSecretBuyLock;
 
     mapping (bytes32 => uint) hashedSecretSellLock;
 
@@ -26,56 +22,27 @@ contract AcuityAtomicSwap {
         // Get orderId.
         orderId = keccak256(abi.encodePacked(msg.sender, price));
         // Get order.
-        SellOrderLinked storage order = orderIdSellOrder[orderId];
-        // Get total.
-        uint total = order.amount + msg.value;
-
-        bytes32 prev = 0;
-        bytes32 next = orderIdSellOrder[0].next;
-        while (total <= orderIdSellOrder[next].amount) {
-            prev = next;
-            next = orderIdSellOrder[prev].next;
-        }
-        bool replace = false;
-        // Is order already in the list?
-        if (order.amount > 0) {
-            // Find correct old previous.
-            bytes32 oldPrev = 0;
-            while (orderIdSellOrder[oldPrev].next != orderId) {
-                oldPrev = orderIdSellOrder[oldPrev].next;
-            }
-            // Is it in the same position?
-            if (prev == oldPrev) {
-                replace = true;
-            }
-            else {
-                // Remove sender from current position.
-                orderIdSellOrder[oldPrev].next = order.next;
-            }
-        }
-        if (!replace) {
-            // Insert into linked list.
-            orderIdSellOrder[prev].next = orderId;
-            orderIdSellOrder[orderId].next = next;
-        }
-        // Update the amount.
-        order.amount = total;
+        orderIdSellOrder[orderId].amount += msg.value;
         // log info
     }
 
-    function lockBuy(bytes32 orderId, bytes32 hashedSecret, address seller) payable external {
-        BuyLockLinked storage lock = hashedSecretBuyLock[hashedSecret];
+    function lockBuy(bytes32 hashedSecret, address seller, bytes32 orderId) payable external {
+        BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         lock.seller = seller;
         lock.amount = msg.value;
-
-        orderIdTopBuyLock[orderId] = hashedSecret;
-
-        // log buyer
+        // log info
     }
 
-    function lockSell(bytes32 orderId, bytes32 hashedSecret, uint amount) external {
+    function lockSell(uint price, bytes32 hashedSecret, uint amount) external {
+        // Get orderId.
+        bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
+        // Move amount.
         orderIdSellOrder[orderId].amount -= amount;
         hashedSecretSellLock[hashedSecret] = amount;
+
+        if (orderIdSellOrder[orderId].amount == 0) {
+            delete orderIdSellOrder[orderId];
+        }
     }
 
     function unlockSell(bytes32 secret) external {
