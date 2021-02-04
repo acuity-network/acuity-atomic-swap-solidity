@@ -9,7 +9,7 @@ contract AcuityAtomicSwapSell {
         uint timeout;
     }
 
-    mapping (bytes32 => uint) orderIdAmount;
+    mapping (bytes32 => uint) orderIdValue;
 
     mapping (bytes32 => SellLock) hashedSecretSellLock;
 
@@ -40,7 +40,7 @@ contract AcuityAtomicSwapSell {
         // Get orderId.
         orderId = keccak256(abi.encodePacked(msg.sender, price));
         // Get order.
-        orderIdAmount[orderId] += msg.value;
+        orderIdValue[orderId] += msg.value;
         // Log info.
         emit CreateOrder(msg.sender, orderId, price, msg.value);
     }
@@ -52,9 +52,9 @@ contract AcuityAtomicSwapSell {
         // Get orderId.
         bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
         // Check there is enough.
-        require (orderIdAmount[orderId] >= value, "Sell order not big enough.");
+        require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Move value.
-        orderIdAmount[orderId] -= value;
+        orderIdValue[orderId] -= value;
         hashedSecretSellLock[hashedSecret].value = value;
         hashedSecretSellLock[hashedSecret].timeout = timeout;
         hashedSecretSellLock[hashedSecret].orderId = orderId;
@@ -87,10 +87,25 @@ contract AcuityAtomicSwapSell {
         require (hashedSecretSellLock[hashedSecret].orderId == orderId, "Wrong orderId.");
         require (hashedSecretSellLock[hashedSecret].timeout >= block.timestamp, "Lock not timed out.");
         uint value = hashedSecretSellLock[hashedSecret].value;
-        orderIdAmount[orderId] += value;
+        orderIdValue[orderId] += value;
         delete hashedSecretSellLock[hashedSecret];
         // Log info.
         emit TimeoutSell(hashedSecret, orderId, value);
+    }
+
+    function getOrderValue(address seller, uint price) view external returns (uint value) {
+        value = orderIdValue[keccak256(abi.encodePacked(seller, price))];
+    }
+
+    function getOrderValue(bytes32 orderId) view external returns (uint value) {
+        value = orderIdValue[orderId];
+    }
+
+    function getSellLock(bytes32 hashedSecret) view external returns (bytes32 orderId, uint value, uint timeout) {
+        SellLock storage sellLock = hashedSecretSellLock[hashedSecret];
+        orderId = sellLock.orderId;
+        value = sellLock.value;
+        timeout = sellLock.timeout;
     }
 
 }

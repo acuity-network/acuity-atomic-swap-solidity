@@ -70,4 +70,11 @@ contract AcuityAtomicSwapBuy {
         emit TimeoutBuy(hashedSecret, dest, value);
     }
 
+    function getBuyLock(bytes32 hashedSecret) view external returns (address seller, uint value, uint timeout) {
+        BuyLock storage buyLock = hashedSecretBuyLock[hashedSecret];
+        seller = buyLock.seller;
+        value = buyLock.value;
+        timeout = buyLock.timeout;
+    }
+
 }
