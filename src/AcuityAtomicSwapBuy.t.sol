@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import "ds-test/test.sol";
 
-import "./AcuityAtomicSwap.sol";
+import "./AcuityAtomicSwapBuy.sol";
 
-contract AcuityAtomicSwapTest is DSTest {
-    AcuityAtomicSwap swap;
+contract AcuityAtomicSwapBuyTest is DSTest {
+    AcuityAtomicSwapBuy swap;
 
     function setUp() public {
-        swap = new AcuityAtomicSwap();
+        swap = new AcuityAtomicSwapBuy();
     }
 
     function testFail_basic_sanity() public {
