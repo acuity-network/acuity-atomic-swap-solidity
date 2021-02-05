@@ -67,13 +67,10 @@ contract AcuityAtomicSwapSell {
      */
     function unlockSell(bytes32 secret) external {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
-        require (hashedSecretSellLock[hashedSecret].timeout < block.timestamp, "Lock timed out.");
-        address _sender = msg.sender;
+        require (hashedSecretSellLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
         uint value = hashedSecretSellLock[hashedSecret].value;
         delete hashedSecretSellLock[hashedSecret];
-        assembly {
-            pop(call(not(0), _sender, value, 0, 0, 0, 0))
-        }
+        payable(msg.sender).transfer(value);
         // Log info.
         emit UnlockSell(hashedSecret, msg.sender, value, secret);
     }
@@ -85,7 +82,7 @@ contract AcuityAtomicSwapSell {
         // Get orderId.
         bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
         require (hashedSecretSellLock[hashedSecret].orderId == orderId, "Wrong orderId.");
-        require (hashedSecretSellLock[hashedSecret].timeout >= block.timestamp, "Lock not timed out.");
+        require (hashedSecretSellLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
         uint value = hashedSecretSellLock[hashedSecret].value;
         orderIdValue[orderId] += value;
         delete hashedSecretSellLock[hashedSecret];
