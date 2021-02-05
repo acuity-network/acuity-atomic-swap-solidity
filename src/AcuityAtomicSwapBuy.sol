@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 contract AcuityAtomicSwapBuy {
 
     struct BuyLock {
-        address seller;     // address payment will be sent to
+        address payable seller;     // address payment will be sent to
         uint value;        // value to send
         uint timeout;
     }
@@ -29,7 +29,7 @@ contract AcuityAtomicSwapBuy {
     /*
      * Called by buyer.
      */
-    function lockBuy(bytes32 hashedSecret, address seller, uint timeout, bytes32 orderId) payable external {
+    function lockBuy(bytes32 hashedSecret, address payable seller, uint timeout, bytes32 orderId) payable external {
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         lock.seller = seller;
         lock.value = msg.value;
@@ -43,13 +43,11 @@ contract AcuityAtomicSwapBuy {
      */
     function unlockBuy(bytes32 secret) external {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
-        require (hashedSecretBuyLock[hashedSecret].timeout < block.timestamp, "Lock timed out.");
-        address seller = hashedSecretBuyLock[hashedSecret].seller;
+        require (hashedSecretBuyLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
+        address payable seller = hashedSecretBuyLock[hashedSecret].seller;
         uint value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
-        assembly {
-            pop(call(not(0), seller, value, 0, 0, 0, 0))
-        }
+        seller.transfer(value);
         // Log info.
         emit UnlockBuy(hashedSecret, seller, value);
     }
@@ -59,15 +57,12 @@ contract AcuityAtomicSwapBuy {
      */
     function timeoutBuy(bytes32 secret) external {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
-        require (hashedSecretBuyLock[hashedSecret].timeout >= block.timestamp, "Lock not timed out.");
-        address dest = msg.sender;
+        require (hashedSecretBuyLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
         uint value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
-        assembly {
-            pop(call(not(0), dest, value, 0, 0, 0, 0))
-        }
+        payable(msg.sender).transfer(value);
         // Log info.
-        emit TimeoutBuy(hashedSecret, dest, value);
+        emit TimeoutBuy(hashedSecret, msg.sender, value);
     }
 
     function getBuyLock(bytes32 hashedSecret) view external returns (address seller, uint value, uint timeout) {
