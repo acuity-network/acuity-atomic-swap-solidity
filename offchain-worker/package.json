@@ -1,0 +1,11 @@
+{
+  "name": "offchain-worker",
+  "description": "Off-chain worker for Acuity atomic swap exchange.",
+  "repository": "https://github.com/acuity-social/acuity-atomic-swap",
+  "author": "Jonathan Brown <jbrown@acuity.social>",
+  "license": "Apache-2.0",
+  "private": false,
+  "scripts": {
+    "start": "ts-node src/main.ts"
+  }
+}
