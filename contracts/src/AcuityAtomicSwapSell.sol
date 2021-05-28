@@ -36,9 +36,9 @@ contract AcuityAtomicSwapSell {
     /*
      * Called by seller.
      */
-    function addToOrder(uint256 price) payable external returns (bytes32 orderId) {
+    function addToOrder(uint256 price) payable external {
         // Get orderId.
-        orderId = keccak256(abi.encodePacked(msg.sender, price));
+        bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
         // Get order.
         orderIdValue[orderId] += msg.value;
         // Log info.
