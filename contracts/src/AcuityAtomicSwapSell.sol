@@ -4,29 +4,29 @@ pragma solidity ^0.8.3;
 contract AcuityAtomicSwapSell {
 
     struct SellLock {
-        bytes32 orderId;
-        uint128 value;
-        uint128 timeout;
+        bytes16 orderId;
+        uint64 value;
+        uint64 timeout;
     }
 
-    mapping (bytes32 => uint256) orderIdValue;
+    mapping (bytes16 => uint256) orderIdValue;
 
     mapping (bytes32 => SellLock) hashedSecretSellLock;
 
     /**
      * @dev
      */
-    event AddToOrder(address indexed seller, bytes32 indexed orderId, uint256 price, uint256 value);
+    event AddToOrder(address indexed seller, bytes16 indexed orderId, uint256 price, uint256 value);
 
     /**
      * @dev
      */
-    event RemoveFromOrder(address indexed seller, bytes32 indexed orderId, uint256 price, uint256 value);
+    event RemoveFromOrder(address indexed seller, bytes16 indexed orderId, uint256 price, uint256 value);
 
     /**
      * @dev
      */
-    event LockSell(bytes32 indexed orderId, bytes32 indexed hashedSecret, address indexed seller, uint256 value, uint256 timeout);
+    event LockSell(bytes16 indexed orderId, bytes32 indexed hashedSecret, address indexed seller, uint256 value, uint256 timeout);
 
     /**
      * @dev
@@ -36,14 +36,14 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event TimeoutSell(bytes32 indexed hashedSecret, bytes32 indexed orderId, uint256 value);
+    event TimeoutSell(bytes32 indexed hashedSecret, bytes16 indexed orderId, uint256 value);
 
     /*
      * Called by seller.
      */
     function addToOrder(uint256 price) payable external {
         // Get orderId.
-        bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
         // Add value to order.
         orderIdValue[orderId] += msg.value;
         // Log info.
@@ -55,7 +55,7 @@ contract AcuityAtomicSwapSell {
      */
     function removeFromOrder(uint256 price, uint256 value) external {
         // Get orderId.
-        bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
         // Check there is enough.
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Remove value from order.
@@ -71,7 +71,7 @@ contract AcuityAtomicSwapSell {
      */
     function lockSell(uint256 price, bytes32 hashedSecret, uint256 timeout, uint256 value) external {
         // Get orderId.
-        bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
         // Check there is enough.
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Move value.
@@ -101,7 +101,7 @@ contract AcuityAtomicSwapSell {
      */
     function timeoutSell(uint256 price, bytes32 hashedSecret) external {
         // Get orderId.
-        bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
         require (hashedSecretSellLock[hashedSecret].orderId == orderId, "Wrong orderId.");
         require (hashedSecretSellLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
         uint256 value = hashedSecretSellLock[hashedSecret].value;
@@ -112,14 +112,14 @@ contract AcuityAtomicSwapSell {
     }
 
     function getOrderValue(address seller, uint256 price) view external returns (uint256 value) {
-        value = orderIdValue[keccak256(abi.encodePacked(seller, price))];
+        value = orderIdValue[bytes16(keccak256(abi.encodePacked(seller, price)))];
     }
 
-    function getOrderValue(bytes32 orderId) view external returns (uint256 value) {
+    function getOrderValue(bytes16 orderId) view external returns (uint256 value) {
         value = orderIdValue[orderId];
     }
 
-    function getSellLock(bytes32 hashedSecret) view external returns (bytes32 orderId, uint256 value, uint256 timeout) {
+    function getSellLock(bytes32 hashedSecret) view external returns (bytes16 orderId, uint256 value, uint256 timeout) {
         SellLock storage sellLock = hashedSecretSellLock[hashedSecret];
         orderId = sellLock.orderId;
         value = sellLock.value;

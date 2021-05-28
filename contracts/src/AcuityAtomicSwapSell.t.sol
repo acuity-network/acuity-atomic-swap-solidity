@@ -17,7 +17,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
     function testAddToOrder() public {
         uint256 price = 5;
         uint256 value = 50;
-        bytes32 orderId = keccak256(abi.encodePacked(this, price));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, price)));
         acuityAtomicSwapSell.addToOrder{value: value}(price);
         assertEq(address(acuityAtomicSwapSell).balance, value);
         assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), value);
@@ -41,7 +41,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
     function testRemoveFromOrder() public {
         uint256 price = 5;
         uint256 value = 50;
-        bytes32 orderId = keccak256(abi.encodePacked(this, price));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, price)));
         acuityAtomicSwapSell.addToOrder{value: value}(price);
         assertEq(address(acuityAtomicSwapSell).balance, value);
         assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), value);
@@ -70,7 +70,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
 
     function testLockSell() public {
         uint256 price = 5;
-        bytes32 orderId = keccak256(abi.encodePacked(this, price));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, price)));
         acuityAtomicSwapSell.addToOrder{value: 50}(price);
 
         bytes32 secret = hex"1234";
@@ -79,7 +79,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         uint256 value = 10;
         acuityAtomicSwapSell.lockSell(price, hashedSecret, timeout, value);
         assertEq(acuityAtomicSwapSell.getOrderValue(orderId), 40);
-        (bytes32 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
+        (bytes16 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
         assertEq(lockOrderId, orderId);
         assertEq(lockValue, value);
         assertEq(lockTimeout, timeout);
@@ -105,7 +105,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
 
     function testUnlockSell() public {
         uint256 price = 5;
-        bytes32 orderId = keccak256(abi.encodePacked(this, price));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, price)));
         acuityAtomicSwapSell.addToOrder{value: 50}(price);
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
@@ -113,7 +113,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         uint256 value = 10;
 
         acuityAtomicSwapSell.lockSell(price, hashedSecret, timeout, value);
-        (bytes32 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
+        (bytes16 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
         assertEq(lockOrderId, orderId);
         assertEq(lockValue, value);
         assertEq(lockTimeout, timeout);
@@ -167,7 +167,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
 
     function testTimeoutSell() public {
         uint256 price = 5;
-        bytes32 orderId = keccak256(abi.encodePacked(this, price));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, price)));
         acuityAtomicSwapSell.addToOrder{value: 50}(price);
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
@@ -175,7 +175,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         uint256 value = 10;
 
         acuityAtomicSwapSell.lockSell(price, hashedSecret, timeout, value);
-        (bytes32 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
+        (bytes16 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
         assertEq(lockOrderId, orderId);
         assertEq(lockValue, value);
         assertEq(lockTimeout, timeout);
