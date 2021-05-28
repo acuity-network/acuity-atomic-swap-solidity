@@ -4,7 +4,7 @@ pragma solidity ^0.8.3;
 contract AcuityAtomicSwapBuy {
 
     struct BuyLock {
-        address payable seller;     // address payment will be sent to
+        address seller;     // address payment will be sent to
         uint64 value;        // value to send
         uint32 timeout;
     }
@@ -29,7 +29,7 @@ contract AcuityAtomicSwapBuy {
     /*
      * Called by buyer.
      */
-    function lockBuy(bytes32 hashedSecret, address payable seller, uint256 timeout, bytes16 orderId) payable external {
+    function lockBuy(bytes32 hashedSecret, address seller, uint256 timeout, bytes16 orderId) payable external {
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         lock.seller = seller;
         lock.value = uint64(msg.value);
@@ -44,10 +44,10 @@ contract AcuityAtomicSwapBuy {
     function unlockBuy(bytes32 secret) external {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         require (hashedSecretBuyLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
-        address payable seller = hashedSecretBuyLock[hashedSecret].seller;
+        address seller = hashedSecretBuyLock[hashedSecret].seller;
         uint256 value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
-        seller.transfer(value);
+        payable(seller).transfer(value);
         // Log info.
         emit UnlockBuy(hashedSecret, seller, value);
     }
