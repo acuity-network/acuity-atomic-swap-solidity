@@ -21,6 +21,11 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
+    event RemoveFromOrder(address indexed seller, bytes32 indexed orderId, uint256 price, uint256 value);
+
+    /**
+     * @dev
+     */
     event LockSell(bytes32 indexed orderId, bytes32 indexed hashedSecret, address indexed seller, uint256 value, uint256 timeout);
 
     /**
@@ -39,10 +44,26 @@ contract AcuityAtomicSwapSell {
     function addToOrder(uint256 price) payable external {
         // Get orderId.
         bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
-        // Get order.
+        // Add value to order.
         orderIdValue[orderId] += msg.value;
         // Log info.
         emit AddToOrder(msg.sender, orderId, price, msg.value);
+    }
+
+    /*
+     * Called by seller.
+     */
+    function removeFromOrder(uint256 price, uint256 value) external {
+        // Get orderId.
+        bytes32 orderId = keccak256(abi.encodePacked(msg.sender, price));
+        // Check there is enough.
+        require (orderIdValue[orderId] >= value, "Sell order not big enough.");
+        // Remove value from order.
+        orderIdValue[orderId] -= value;
+        // Return the funds.
+        payable(msg.sender).transfer(value);
+        // Log info.
+        emit RemoveFromOrder(msg.sender, orderId, price, value);
     }
 
     /*

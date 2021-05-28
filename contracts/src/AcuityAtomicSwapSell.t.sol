@@ -24,6 +24,36 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
     }
 
+    function testControlRemoveFromOrderNotBigEnough() public {
+        uint256 price = 5;
+        uint256 value = 50;
+        acuityAtomicSwapSell.addToOrder{value: value}(price);
+        acuityAtomicSwapSell.removeFromOrder(price, value);
+    }
+
+    function testFailRemoveFromOrderNotBigEnough() public {
+        uint256 price = 5;
+        uint256 value = 50;
+        acuityAtomicSwapSell.addToOrder{value: value}(price);
+        acuityAtomicSwapSell.removeFromOrder(price, value + 1);
+    }
+
+    function testRemoveFromOrder() public {
+        uint256 price = 5;
+        uint256 value = 50;
+        bytes32 orderId = keccak256(abi.encodePacked(this, price));
+        acuityAtomicSwapSell.addToOrder{value: value}(price);
+        assertEq(address(acuityAtomicSwapSell).balance, value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
+        uint256 startBalance = address(this).balance;
+        acuityAtomicSwapSell.removeFromOrder(price, value);
+        assertEq(address(this).balance, startBalance + value);
+        assertEq(address(acuityAtomicSwapSell).balance, 0);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), 0);
+        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), 0);
+    }
+
     function testControlLockSellNotBigEnough() public {
         uint256 price = 5;
         uint256 value = 50;
