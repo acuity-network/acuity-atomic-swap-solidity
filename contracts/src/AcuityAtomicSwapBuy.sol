@@ -35,7 +35,7 @@ contract AcuityAtomicSwapBuy {
         lock.value = uint64(msg.value);
         lock.timeout = uint32(timeout);
         // Log info.
-        emit LockBuy(orderId, hashedSecret, seller, uint256(msg.value), timeout);
+        emit LockBuy(orderId, hashedSecret, seller, msg.value, timeout);
     }
 
     /*

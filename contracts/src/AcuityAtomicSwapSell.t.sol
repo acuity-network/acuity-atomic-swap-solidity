@@ -119,14 +119,14 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(lockTimeout, timeout);
 
         assertEq(address(acuityAtomicSwapSell).balance, 50);
-        uint256 startBalance = uint256(address(this).balance);
+        uint256 startBalance = address(this).balance;
         acuityAtomicSwapSell.unlockSell(secret);
         (lockOrderId, lockValue, lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
         assertEq(lockOrderId, 0);
         assertEq(lockValue, 0);
         assertEq(lockTimeout, 0);
         assertEq(address(acuityAtomicSwapSell).balance, 40);
-        assertEq(uint256(address(this).balance), startBalance + 10);
+        assertEq(address(this).balance, startBalance + 10);
     }
 
     function testControlTimeoutSellWrongOrderId() public {
