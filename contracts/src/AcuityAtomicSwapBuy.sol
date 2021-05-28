@@ -5,8 +5,8 @@ contract AcuityAtomicSwapBuy {
 
     struct BuyLock {
         address payable seller;     // address payment will be sent to
-        uint64 value;        // value to send
-        uint64 timeout;
+        uint128 value;        // value to send
+        uint128 timeout;
     }
 
     mapping (bytes32 => BuyLock) hashedSecretBuyLock;
@@ -14,28 +14,28 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event LockBuy(bytes32 indexed orderId, bytes32 indexed hashedSecret, address indexed seller, uint64 value, uint64 timeout);
+    event LockBuy(bytes32 indexed orderId, bytes32 indexed hashedSecret, address indexed seller, uint256 value, uint256 timeout);
 
     /**
      * @dev
      */
-    event UnlockBuy(bytes32 indexed hashedSecret, address indexed seller, uint64 value);
+    event UnlockBuy(bytes32 indexed hashedSecret, address indexed seller, uint256 value);
 
     /**
      * @dev
      */
-    event TimeoutBuy(bytes32 indexed hashedSecret, address indexed dest, uint64 value);
+    event TimeoutBuy(bytes32 indexed hashedSecret, address indexed dest, uint256 value);
 
     /*
      * Called by buyer.
      */
-    function lockBuy(bytes32 hashedSecret, address payable seller, uint64 timeout, bytes32 orderId) payable external {
+    function lockBuy(bytes32 hashedSecret, address payable seller, uint256 timeout, bytes32 orderId) payable external {
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         lock.seller = seller;
         lock.value = uint64(msg.value);
-        lock.timeout = timeout;
+        lock.timeout = uint64(timeout);
         // Log info.
-        emit LockBuy(orderId, hashedSecret, seller, uint64(msg.value), timeout);
+        emit LockBuy(orderId, hashedSecret, seller, uint256(msg.value), timeout);
     }
 
     /*
@@ -45,7 +45,7 @@ contract AcuityAtomicSwapBuy {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         require (hashedSecretBuyLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
         address payable seller = hashedSecretBuyLock[hashedSecret].seller;
-        uint64 value = hashedSecretBuyLock[hashedSecret].value;
+        uint256 value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
         seller.transfer(value);
         // Log info.
@@ -58,14 +58,14 @@ contract AcuityAtomicSwapBuy {
     function timeoutBuy(bytes32 secret) external {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         require (hashedSecretBuyLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
-        uint64 value = hashedSecretBuyLock[hashedSecret].value;
+        uint256 value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
         payable(msg.sender).transfer(value);
         // Log info.
         emit TimeoutBuy(hashedSecret, msg.sender, value);
     }
 
-    function getBuyLock(bytes32 hashedSecret) view external returns (address seller, uint64 value, uint64 timeout) {
+    function getBuyLock(bytes32 hashedSecret) view external returns (address seller, uint256 value, uint256 timeout) {
         BuyLock storage buyLock = hashedSecretBuyLock[hashedSecret];
         seller = buyLock.seller;
         value = buyLock.value;
