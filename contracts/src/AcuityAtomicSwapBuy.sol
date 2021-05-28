@@ -14,7 +14,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event LockBuy(bytes32 indexed orderId, bytes32 indexed hashedSecret, address indexed seller, uint256 value, uint256 timeout);
+    event LockBuy(bytes16 indexed orderId, bytes32 indexed hashedSecret, address indexed seller, uint256 value, uint256 timeout);
 
     /**
      * @dev
@@ -29,7 +29,7 @@ contract AcuityAtomicSwapBuy {
     /*
      * Called by buyer.
      */
-    function lockBuy(bytes32 hashedSecret, address payable seller, uint256 timeout, bytes32 orderId) payable external {
+    function lockBuy(bytes32 hashedSecret, address payable seller, uint256 timeout, bytes16 orderId) payable external {
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         lock.seller = seller;
         lock.value = uint64(msg.value);
