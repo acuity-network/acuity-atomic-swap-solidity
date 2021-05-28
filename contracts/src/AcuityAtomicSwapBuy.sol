@@ -5,8 +5,8 @@ contract AcuityAtomicSwapBuy {
 
     struct BuyLock {
         address payable seller;     // address payment will be sent to
-        uint128 value;        // value to send
-        uint128 timeout;
+        uint64 value;        // value to send
+        uint32 timeout;
     }
 
     mapping (bytes32 => BuyLock) hashedSecretBuyLock;
@@ -33,7 +33,7 @@ contract AcuityAtomicSwapBuy {
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         lock.seller = seller;
         lock.value = uint64(msg.value);
-        lock.timeout = uint64(timeout);
+        lock.timeout = uint32(timeout);
         // Log info.
         emit LockBuy(orderId, hashedSecret, seller, uint256(msg.value), timeout);
     }
