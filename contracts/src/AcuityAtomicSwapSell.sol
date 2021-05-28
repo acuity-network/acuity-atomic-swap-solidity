@@ -16,7 +16,7 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event CreateOrder(address indexed seller, bytes32 indexed orderId, uint256 price, uint256 value);
+    event AddToOrder(address indexed seller, bytes32 indexed orderId, uint256 price, uint256 value);
 
     /**
      * @dev
@@ -36,13 +36,13 @@ contract AcuityAtomicSwapSell {
     /*
      * Called by seller.
      */
-    function createOrder(uint256 price) payable external returns (bytes32 orderId) {
+    function addToOrder(uint256 price) payable external returns (bytes32 orderId) {
         // Get orderId.
         orderId = keccak256(abi.encodePacked(msg.sender, price));
         // Get order.
         orderIdValue[orderId] += msg.value;
         // Log info.
-        emit CreateOrder(msg.sender, orderId, price, msg.value);
+        emit AddToOrder(msg.sender, orderId, price, msg.value);
     }
 
     /*
