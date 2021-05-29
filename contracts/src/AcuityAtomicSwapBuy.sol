@@ -47,7 +47,8 @@ contract AcuityAtomicSwapBuy {
         address seller = hashedSecretBuyLock[hashedSecret].seller;
         uint256 value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
-        payable(seller).transfer(value);
+        // Send the funds. Cast value to uint128 for Solang compatibility.
+        payable(seller).transfer(uint128(value));
         // Log info.
         emit UnlockBuy(hashedSecret, seller, value);
     }
@@ -60,7 +61,8 @@ contract AcuityAtomicSwapBuy {
         require (hashedSecretBuyLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
         uint256 value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
-        payable(msg.sender).transfer(value);
+        // Send the funds. Cast value to uint128 for Solang compatibility.
+        payable(msg.sender).transfer(uint128(value));
         // Log info.
         emit TimeoutBuy(hashedSecret, msg.sender, value);
     }

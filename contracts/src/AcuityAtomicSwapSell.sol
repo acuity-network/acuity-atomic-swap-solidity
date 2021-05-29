@@ -60,8 +60,8 @@ contract AcuityAtomicSwapSell {
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Remove value from order.
         orderIdValue[orderId] -= value;
-        // Return the funds.
-        payable(msg.sender).transfer(value);
+        // Send the funds. Cast value to uint128 for Solang compatibility.
+        payable(msg.sender).transfer(uint128(value));
         // Log info.
         emit RemoveFromOrder(msg.sender, orderId, price, value);
     }
@@ -91,7 +91,8 @@ contract AcuityAtomicSwapSell {
         require (hashedSecretSellLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
         uint256 value = hashedSecretSellLock[hashedSecret].value;
         delete hashedSecretSellLock[hashedSecret];
-        payable(msg.sender).transfer(value);
+        // Send the funds. Cast value to uint128 for Solang compatibility.
+        payable(msg.sender).transfer(uint128(value));
         // Log info.
         emit UnlockSell(hashedSecret, msg.sender, value, secret);
     }
