@@ -30,6 +30,7 @@ contract AcuityAtomicSwapBuy {
      * Called by buyer.
      */
     function lockBuy(bytes32 hashedSecret, address seller, uint256 timeout, bytes16 orderId) payable external {
+        // Store lock data.
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         lock.seller = seller;
         lock.value = uint64(msg.value);
@@ -42,8 +43,11 @@ contract AcuityAtomicSwapBuy {
      * Called by seller.
      */
     function unlockBuy(bytes32 secret) external {
+        // Calculate hashed secret.
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+        // Check lock has not timed out.
         require (hashedSecretBuyLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
+        // Get lock data and delete lock.
         address seller = hashedSecretBuyLock[hashedSecret].seller;
         uint256 value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
@@ -57,8 +61,11 @@ contract AcuityAtomicSwapBuy {
      * Called by buyer if seller did not lock.
      */
     function timeoutBuy(bytes32 secret) external {
+        // Calculate hashed secret.
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+        // Check lock has timed out.
         require (hashedSecretBuyLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
+        // Get lock value and delete lock.
         uint256 value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
         // Send the funds. Cast value to uint128 for Solang compatibility.

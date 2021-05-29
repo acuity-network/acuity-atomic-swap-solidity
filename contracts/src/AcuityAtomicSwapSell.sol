@@ -42,7 +42,7 @@ contract AcuityAtomicSwapSell {
      * Called by seller.
      */
     function addToOrder(uint256 price) payable external {
-        // Get orderId.
+        // Calculate orderId.
         bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
         // Add value to order.
         orderIdValue[orderId] += msg.value;
@@ -54,13 +54,13 @@ contract AcuityAtomicSwapSell {
      * Called by seller.
      */
     function removeFromOrder(uint256 price, uint256 value) external {
-        // Get orderId.
+        // Calculate orderId.
         bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
         // Check there is enough.
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Remove value from order.
         orderIdValue[orderId] -= value;
-        // Send the funds. Cast value to uint128 for Solang compatibility.
+        // Return the funds. Cast value to uint128 for Solang compatibility.
         payable(msg.sender).transfer(uint128(value));
         // Log info.
         emit RemoveFromOrder(msg.sender, orderId, price, value);
@@ -70,11 +70,11 @@ contract AcuityAtomicSwapSell {
      * Called by seller.
      */
     function lockSell(uint256 price, bytes32 hashedSecret, uint256 timeout, uint256 value) external {
-        // Get orderId.
+        // Calculate orderId.
         bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
         // Check there is enough.
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
-        // Move value.
+        // Move value into sell lock.
         orderIdValue[orderId] -= value;
         hashedSecretSellLock[hashedSecret].value = uint64(value);
         hashedSecretSellLock[hashedSecret].timeout = uint32(timeout);
@@ -87,8 +87,11 @@ contract AcuityAtomicSwapSell {
      * Called by buyer.
      */
     function unlockSell(bytes32 secret) external {
+        // Calculate hashed secret.
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+        // Check sell lock has not timed out.
         require (hashedSecretSellLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
+        // Get lock value and delete lock.
         uint256 value = hashedSecretSellLock[hashedSecret].value;
         delete hashedSecretSellLock[hashedSecret];
         // Send the funds. Cast value to uint128 for Solang compatibility.
@@ -101,13 +104,16 @@ contract AcuityAtomicSwapSell {
      * Called by seller if buyer did not reveal secret.
      */
     function timeoutSell(uint256 price, bytes32 hashedSecret) external {
-        // Get orderId.
+        // Calculate orderId.
         bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
+        // Check orderId is correct and lock has timed out.
         require (hashedSecretSellLock[hashedSecret].orderId == orderId, "Wrong orderId.");
         require (hashedSecretSellLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
+        // Get lock value and delete lock.
         uint256 value = hashedSecretSellLock[hashedSecret].value;
-        orderIdValue[orderId] += value;
         delete hashedSecretSellLock[hashedSecret];
+        // Return funds to sell order.
+        orderIdValue[orderId] += value;
         // Log info.
         emit TimeoutSell(hashedSecret, orderId, value);
     }
