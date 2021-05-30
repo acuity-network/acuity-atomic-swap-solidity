@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@polkadot/api": "^4.11.2",
+    "@polkadot/api-contract": "^4.11.2",
     "express": "^4.17.1",
     "web3": "^1.3.6"
   },
