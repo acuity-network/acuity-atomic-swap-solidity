@@ -68,6 +68,20 @@ contract AcuityAtomicSwapSellTest is DSTest {
         acuityAtomicSwapSell.lockSell(price, hex"1234", block.timestamp + 1000, value + 10);
     }
 
+    function testControlLockSellAlreadyInUse() public {
+        uint256 price = 5;
+        acuityAtomicSwapSell.addToOrder{value: 20}(price);
+        acuityAtomicSwapSell.lockSell(price, hex"1234", block.timestamp + 1000, 10);
+        acuityAtomicSwapSell.lockSell(price, hex"3456", block.timestamp + 1000, 10);
+    }
+
+    function testFailLockSellAlreadyInUse() public {
+        uint256 price = 5;
+        acuityAtomicSwapSell.addToOrder{value: 20}(price);
+        acuityAtomicSwapSell.lockSell(price, hex"1234", block.timestamp + 1000, 10);
+        acuityAtomicSwapSell.lockSell(price, hex"1234", block.timestamp + 1000, 10);
+    }
+
     function testLockSell() public {
         uint256 price = 5;
         bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, price)));

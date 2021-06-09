@@ -14,6 +14,20 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         acuityAtomicSwapBuy = new AcuityAtomicSwapBuy();
     }
 
+    function testControlLockBuyAlreadyInUse() public {
+        address seller = address(0x3456);
+        uint256 timeout = block.timestamp + 1000;
+        acuityAtomicSwapBuy.lockBuy{value: 10}(hex"1234", payable(seller), timeout, hex"5678");
+        acuityAtomicSwapBuy.lockBuy{value: 10}(hex"3456", payable(seller), timeout, hex"5678");
+    }
+
+    function testFailLockBuyAlreadyInUse() public {
+        address seller = address(0x3456);
+        uint256 timeout = block.timestamp + 1000;
+        acuityAtomicSwapBuy.lockBuy{value: 10}(hex"1234", payable(seller), timeout, hex"5678");
+        acuityAtomicSwapBuy.lockBuy{value: 10}(hex"1234", payable(seller), timeout, hex"5678");
+    }
+
     function testLockBuy() public {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));

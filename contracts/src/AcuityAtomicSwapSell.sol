@@ -74,6 +74,8 @@ contract AcuityAtomicSwapSell {
         bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
         // Check there is enough.
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
+        // Ensure hashed secret is not already in use.
+        require (hashedSecretSellLock[hashedSecret].value == 0, "Hashed secret already in use.");
         // Move value into sell lock.
         orderIdValue[orderId] -= value;
         hashedSecretSellLock[hashedSecret].value = uint64(value);

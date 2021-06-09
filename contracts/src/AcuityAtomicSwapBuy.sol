@@ -30,6 +30,8 @@ contract AcuityAtomicSwapBuy {
      * Called by buyer.
      */
     function lockBuy(bytes32 hashedSecret, address seller, uint256 timeout, bytes16 orderId) payable external {
+        // Ensure hashed secret is not already in use.
+        require (hashedSecretBuyLock[hashedSecret].value == 0, "Hashed secret already in use.");
         // Store lock data.
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         lock.seller = seller;
