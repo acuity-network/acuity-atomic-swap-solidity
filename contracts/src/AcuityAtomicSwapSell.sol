@@ -78,9 +78,9 @@ contract AcuityAtomicSwapSell {
         require (hashedSecretSellLock[hashedSecret].value == 0, "Hashed secret already in use.");
         // Move value into sell lock.
         orderIdValue[orderId] -= value;
+        hashedSecretSellLock[hashedSecret].orderId = orderId;
         hashedSecretSellLock[hashedSecret].value = uint64(value);
         hashedSecretSellLock[hashedSecret].timeout = uint32(timeout);
-        hashedSecretSellLock[hashedSecret].orderId = orderId;
         // Log info.
         emit LockSell(orderId, hashedSecret, msg.sender, value, timeout);
     }
