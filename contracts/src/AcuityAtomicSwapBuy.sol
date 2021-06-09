@@ -31,11 +31,12 @@ contract AcuityAtomicSwapBuy {
      */
     function lockBuy(bytes32 hashedSecret, address seller, uint256 timeout, bytes16 orderId) payable external {
         // Ensure hashed secret is not already in use.
-        require (hashedSecretBuyLock[hashedSecret].value == 0, "Hashed secret already in use.");
+        BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
+        require (lock.value == 0, "Hashed secret already in use.");
         // Store lock data.
-        hashedSecretBuyLock[hashedSecret].seller = seller;
-        hashedSecretBuyLock[hashedSecret].value = uint64(msg.value);
-        hashedSecretBuyLock[hashedSecret].timeout = uint32(timeout);
+        lock.seller = seller;
+        lock.value = uint64(msg.value);
+        lock.timeout = uint32(timeout);
         // Log info.
         emit LockBuy(orderId, hashedSecret, seller, msg.value, timeout);
     }

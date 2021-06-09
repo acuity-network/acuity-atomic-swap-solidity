@@ -75,12 +75,13 @@ contract AcuityAtomicSwapSell {
         // Check there is enough.
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Ensure hashed secret is not already in use.
-        require (hashedSecretSellLock[hashedSecret].value == 0, "Hashed secret already in use.");
+        SellLock storage lock = hashedSecretSellLock[hashedSecret];
+        require (lock.value == 0, "Hashed secret already in use.");
         // Move value into sell lock.
         orderIdValue[orderId] -= value;
-        hashedSecretSellLock[hashedSecret].orderId = orderId;
-        hashedSecretSellLock[hashedSecret].value = uint64(value);
-        hashedSecretSellLock[hashedSecret].timeout = uint32(timeout);
+        lock.orderId = orderId;
+        lock.value = uint64(value);
+        lock.timeout = uint32(timeout);
         // Log info.
         emit LockSell(orderId, hashedSecret, msg.sender, value, timeout);
     }
