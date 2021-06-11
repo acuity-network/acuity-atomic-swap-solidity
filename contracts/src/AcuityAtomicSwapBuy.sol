@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.3;
+pragma solidity ^0.8.4;
 
 contract AcuityAtomicSwapBuy {
 
@@ -24,7 +24,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event TimeoutBuy(bytes32 indexed hashedSecret, address indexed dest, uint256 value);
+    event TimeoutBuy(bytes32 indexed hashedSecret, address indexed buyer, uint256 value);
 
     /*
      * Called by buyer.

@@ -3,4 +3,4 @@
 set -e
 
 . ~/.nix-profile/etc/profile.d/nix.sh
-dapp --use solc:0.8.3 --verbose test
+dapp --use solc:0.8.4 --verbose test
