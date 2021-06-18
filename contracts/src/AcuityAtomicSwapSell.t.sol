@@ -24,6 +24,60 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
     }
 
+    function testControlChangeOrderNotBigEnough() public {
+        uint256 price = 5;
+        uint256 value = 50;
+        acuityAtomicSwapSell.addToOrder{value: value}(price);
+        acuityAtomicSwapSell.changeOrder(price, price + 1, value);
+    }
+
+    function testFailChangeOrderNotBigEnough() public {
+        uint256 price = 5;
+        uint256 value = 50;
+        acuityAtomicSwapSell.addToOrder{value: value}(price);
+        acuityAtomicSwapSell.changeOrder(price, price + 1, value + 1);
+    }
+
+    function testChangeOrder() public {
+        uint256 price = 5;
+        uint256 value = 50;
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, price)));
+        acuityAtomicSwapSell.addToOrder{value: value}(price);
+        assertEq(address(acuityAtomicSwapSell).balance, value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
+        uint256 startBalance = address(this).balance;
+        uint256 newPrice = 4;
+        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(this, newPrice)));
+        acuityAtomicSwapSell.changeOrder(price, newPrice, 10);
+        assertEq(address(this).balance, startBalance);
+        assertEq(address(acuityAtomicSwapSell).balance, value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), value - 10);
+        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value - 10);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), newPrice), 10);
+        assertEq(acuityAtomicSwapSell.getOrderValue(newOrderId), 10);
+    }
+
+    function testChangeOrderNoValue() public {
+        uint256 price = 5;
+        uint256 value = 50;
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, price)));
+        acuityAtomicSwapSell.addToOrder{value: value}(price);
+        assertEq(address(acuityAtomicSwapSell).balance, value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
+        uint256 startBalance = address(this).balance;
+        uint256 newPrice = 4;
+        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(this, newPrice)));
+        acuityAtomicSwapSell.changeOrder(price, newPrice);
+        assertEq(address(this).balance, startBalance);
+        assertEq(address(acuityAtomicSwapSell).balance, value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), 0);
+        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), 0);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), newPrice), value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(newOrderId), value);
+    }
+
     function testControlRemoveFromOrderNotBigEnough() public {
         uint256 price = 5;
         uint256 value = 50;
@@ -47,7 +101,23 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), value);
         assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
         uint256 startBalance = address(this).balance;
-        acuityAtomicSwapSell.removeFromOrder(price, value);
+        acuityAtomicSwapSell.removeFromOrder(price, 10);
+        assertEq(address(this).balance, startBalance + 10);
+        assertEq(address(acuityAtomicSwapSell).balance, value - 10);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), value - 10);
+        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value - 10);
+    }
+
+    function testRemoveFromOrderNoValue() public {
+        uint256 price = 5;
+        uint256 value = 50;
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, price)));
+        acuityAtomicSwapSell.addToOrder{value: value}(price);
+        assertEq(address(acuityAtomicSwapSell).balance, value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), value);
+        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
+        uint256 startBalance = address(this).balance;
+        acuityAtomicSwapSell.removeFromOrder(price);
         assertEq(address(this).balance, startBalance + value);
         assertEq(address(acuityAtomicSwapSell).balance, 0);
         assertEq(acuityAtomicSwapSell.getOrderValue(address(this), price), 0);

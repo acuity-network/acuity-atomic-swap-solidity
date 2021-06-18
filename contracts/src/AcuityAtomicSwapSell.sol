@@ -53,6 +53,41 @@ contract AcuityAtomicSwapSell {
     /*
      * Called by seller.
      */
+    function changeOrder(uint256 oldPrice, uint256 newPrice, uint256 value) external {
+        // Calculate orderIds.
+        bytes16 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldPrice)));
+        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newPrice)));
+        // Check there is enough.
+        require (orderIdValue[oldOrderId] >= value, "Sell order not big enough.");
+        // Transfer value.
+        orderIdValue[oldOrderId] -= value;
+        orderIdValue[newOrderId] += value;
+        // Log info.
+        emit RemoveFromOrder(msg.sender, oldOrderId, oldPrice, value);
+        emit AddToOrder(msg.sender, newOrderId, newPrice, value);
+    }
+
+    /*
+     * Called by seller.
+     */
+    function changeOrder(uint256 oldPrice, uint256 newPrice) external {
+        // Calculate orderIds.
+        bytes16 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldPrice)));
+        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newPrice)));
+        // Get order value.
+        uint256 value = orderIdValue[oldOrderId];
+        // Delete old order.
+        delete orderIdValue[oldOrderId];
+        // Transfer value.
+        orderIdValue[newOrderId] += value;
+        // Log info.
+        emit RemoveFromOrder(msg.sender, oldOrderId, oldPrice, value);
+        emit AddToOrder(msg.sender, newOrderId, newPrice, value);
+    }
+
+    /*
+     * Called by seller.
+     */
     function removeFromOrder(uint256 price, uint256 value) external {
         // Calculate orderId.
         bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
@@ -60,6 +95,22 @@ contract AcuityAtomicSwapSell {
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Remove value from order.
         orderIdValue[orderId] -= value;
+        // Return the funds. Cast value to uint128 for Solang compatibility.
+        payable(msg.sender).transfer(uint128(value));
+        // Log info.
+        emit RemoveFromOrder(msg.sender, orderId, price, value);
+    }
+
+    /*
+     * Called by seller.
+     */
+    function removeFromOrder(uint256 price) external {
+        // Calculate orderId.
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, price)));
+        // Get order value.
+        uint256 value = orderIdValue[orderId];
+        // Delete order.
+        delete orderIdValue[orderId];
         // Return the funds. Cast value to uint128 for Solang compatibility.
         payable(msg.sender).transfer(uint128(value));
         // Log info.
