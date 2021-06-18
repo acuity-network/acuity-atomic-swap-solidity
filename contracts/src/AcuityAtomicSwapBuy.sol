@@ -14,7 +14,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event LockBuy(bytes16 indexed orderId, bytes32 indexed hashedSecret, address indexed seller, uint256 value, uint256 timeout);
+    event LockBuy(uint256 indexed assetId, bytes16 indexed orderId, bytes32 indexed hashedSecret, address seller, uint256 value, uint256 timeout);
 
     /**
      * @dev
@@ -29,7 +29,7 @@ contract AcuityAtomicSwapBuy {
     /*
      * Called by buyer.
      */
-    function lockBuy(bytes32 hashedSecret, address seller, uint256 timeout, bytes16 orderId) payable external {
+    function lockBuy(uint256 assetId, bytes16 orderId, bytes32 hashedSecret, address seller, uint256 timeout) payable external {
         // Ensure hashed secret is not already in use.
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         require (lock.value == 0, "Hashed secret already in use.");
@@ -38,7 +38,7 @@ contract AcuityAtomicSwapBuy {
         lock.value = uint64(msg.value);
         lock.timeout = uint32(timeout);
         // Log info.
-        emit LockBuy(orderId, hashedSecret, seller, msg.value, timeout);
+        emit LockBuy(assetId, orderId, hashedSecret, seller, msg.value, timeout);
     }
 
     /*
