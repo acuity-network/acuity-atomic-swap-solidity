@@ -148,8 +148,8 @@ contract AcuityAtomicSwapSell {
         // Get lock value and delete lock.
         uint256 value = hashedSecretSellLock[hashedSecret].value;
         delete hashedSecretSellLock[hashedSecret];
-        // Send the funds. Cast value to uint128 for Solang compatibility.
-        payable(msg.sender).transfer(uint128(value));
+        // Send the funds.
+        payable(msg.sender).transfer(value);
         // Log info.
         emit UnlockSell(hashedSecret, msg.sender, value, secret);
     }
