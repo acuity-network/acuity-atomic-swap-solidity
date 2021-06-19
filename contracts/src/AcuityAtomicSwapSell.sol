@@ -16,27 +16,27 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event AddToOrder(address indexed seller, bytes32 indexed orderId, bytes32 assetIdPrice, uint256 value);
+    event AddToOrder(address seller, bytes32 orderId, bytes32 assetIdPrice, uint256 value);
 
     /**
      * @dev
      */
-    event RemoveFromOrder(address indexed seller, bytes32 indexed orderId, bytes32 assetIdPrice, uint256 value);
+    event RemoveFromOrder(address seller, bytes32 orderId, bytes32 assetIdPrice, uint256 value);
 
     /**
      * @dev
      */
-    event LockSell(bytes32 indexed orderId, bytes32 indexed hashedSecret, address indexed seller, uint256 value, uint256 timeout);
+    event LockSell(bytes32 orderId, bytes32 hashedSecret, address seller, uint256 value, uint256 timeout);
 
     /**
      * @dev
      */
-    event UnlockSell(bytes32 indexed hashedSecret, address indexed buyer, uint256 value, bytes32 secret);
+    event UnlockSell(bytes32 hashedSecret, address buyer, uint256 value, bytes32 secret);
 
     /**
      * @dev
      */
-    event TimeoutSell(bytes32 indexed hashedSecret, bytes32 indexed orderId, uint256 value);
+    event TimeoutSell(bytes32 hashedSecret, bytes32 orderId, uint256 value);
 
     /*
      * Called by seller.

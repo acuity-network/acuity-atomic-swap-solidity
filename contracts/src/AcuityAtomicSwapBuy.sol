@@ -14,17 +14,17 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event LockBuy(uint256 indexed assetId, bytes32 indexed orderId, bytes32 indexed hashedSecret, address seller, uint256 value, uint256 timeout);
+    event LockBuy(uint256 assetId, bytes32 orderId, bytes32 hashedSecret, address seller, uint256 value, uint256 timeout);
 
     /**
      * @dev
      */
-    event UnlockBuy(bytes32 indexed hashedSecret, address indexed seller, uint256 value);
+    event UnlockBuy(bytes32 hashedSecret, address seller, uint256 value);
 
     /**
      * @dev
      */
-    event TimeoutBuy(bytes32 indexed hashedSecret, address indexed buyer, uint256 value);
+    event TimeoutBuy(bytes32 hashedSecret, address buyer, uint256 value);
 
     /*
      * Called by buyer.
