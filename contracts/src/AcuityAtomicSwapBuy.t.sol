@@ -5,13 +5,33 @@ import "ds-test/test.sol";
 
 import "./AcuityAtomicSwapBuy.sol";
 
+
+contract AccountProxy {
+
+    AcuityAtomicSwapBuy acuityAtomicSwapBuy;
+
+    constructor (AcuityAtomicSwapBuy _acuityAtomicSwapBuy) {
+        acuityAtomicSwapBuy = _acuityAtomicSwapBuy;
+    }
+
+    receive() payable external {
+    }
+
+    function unlockBuy(bytes32 secret) external {
+        acuityAtomicSwapBuy.unlockBuy(secret);
+    }
+}
+
+
 contract AcuityAtomicSwapBuyTest is DSTest {
     AcuityAtomicSwapBuy acuityAtomicSwapBuy;
+    AccountProxy accountProxy;
 
     receive() external payable {}
 
     function setUp() public {
         acuityAtomicSwapBuy = new AcuityAtomicSwapBuy();
+        accountProxy = new AccountProxy(acuityAtomicSwapBuy);
     }
 
     function testControlLockBuyAlreadyInUse() public {
@@ -41,21 +61,19 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         assertEq(lockTimeout, timeout);
     }
 
-    function testControlUnlockBuyTimedOut() public {
+    function testControlUnlockBuyNotSeller() public {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
-        address seller = address(0x3456);
+        address seller = address(accountProxy);
         acuityAtomicSwapBuy.lockBuy{value: 10}(0, hex"5678", hashedSecret, payable(seller), block.timestamp + 1000);
-        acuityAtomicSwapBuy.getBuyLock(hashedSecret);
-        acuityAtomicSwapBuy.unlockBuy(secret);
+        accountProxy.unlockBuy(secret);
     }
 
-    function testFailUnlockBuyTimedOut() public {
+    function testFailUnlockBuyNotSeller() public {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
-        address seller = address(0x3456);
+        address seller = address(accountProxy);
         acuityAtomicSwapBuy.lockBuy{value: 10}(0, hex"5678", hashedSecret, payable(seller), block.timestamp);
-        acuityAtomicSwapBuy.getBuyLock(hashedSecret);
         acuityAtomicSwapBuy.unlockBuy(secret);
     }
 
@@ -63,7 +81,7 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         uint256 value = 10;
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
-        address seller = address(0x3456);
+        address seller = address(accountProxy);
         uint256 timeout = block.timestamp + 1000;
         acuityAtomicSwapBuy.lockBuy{value: value}(0, hex"5678", hashedSecret, payable(seller), timeout);
 
@@ -74,7 +92,7 @@ contract AcuityAtomicSwapBuyTest is DSTest {
 
         assertEq(address(acuityAtomicSwapBuy).balance, value);
         uint256 startBalance = address(seller).balance;
-        acuityAtomicSwapBuy.unlockBuy(secret);
+        accountProxy.unlockBuy(secret);
         (lockSeller, lockValue, lockTimeout) = acuityAtomicSwapBuy.getBuyLock(hashedSecret);
         assertEq(lockSeller, address(0));
         assertEq(lockValue, 0);
@@ -88,7 +106,6 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         address seller = address(0x3456);
         acuityAtomicSwapBuy.lockBuy{value: 10}(0, hex"5678", hashedSecret, payable(seller), block.timestamp);
-        acuityAtomicSwapBuy.getBuyLock(hashedSecret);
         acuityAtomicSwapBuy.timeoutBuy(secret);
     }
 
@@ -97,7 +114,6 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         address seller = address(0x3456);
         acuityAtomicSwapBuy.lockBuy{value: 10}(0, hex"5678", hashedSecret, payable(seller), block.timestamp + 1000);
-        acuityAtomicSwapBuy.getBuyLock(hashedSecret);
         acuityAtomicSwapBuy.timeoutBuy(secret);
     }
 
