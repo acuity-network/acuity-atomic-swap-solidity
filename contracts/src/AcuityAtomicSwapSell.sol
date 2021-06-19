@@ -6,7 +6,7 @@ contract AcuityAtomicSwapSell {
     struct SellLock {
         bytes16 orderId;
         uint64 value;
-        uint32 timeout;
+        uint48 timeout;
     }
 
     mapping (bytes32 => uint256) orderIdValue;
@@ -132,7 +132,7 @@ contract AcuityAtomicSwapSell {
         orderIdValue[orderId] -= value;
         lock.orderId = orderId;
         lock.value = uint64(value);
-        lock.timeout = uint32(timeout);
+        lock.timeout = uint48(timeout);
         // Log info.
         emit LockSell(orderId, hashedSecret, msg.sender, value, timeout);
     }

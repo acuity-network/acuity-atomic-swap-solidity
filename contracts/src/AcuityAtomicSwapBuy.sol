@@ -5,8 +5,8 @@ contract AcuityAtomicSwapBuy {
 
     struct BuyLock {
         address seller;     // address payment will be sent to
-        uint64 value;        // value to send
-        uint32 timeout;
+        uint48 value;        // value to send
+        uint48 timeout;
     }
 
     mapping (bytes32 => BuyLock) hashedSecretBuyLock;
@@ -35,8 +35,8 @@ contract AcuityAtomicSwapBuy {
         require (lock.value == 0, "Hashed secret already in use.");
         // Store lock data.
         lock.seller = seller;
-        lock.value = uint64(msg.value);
-        lock.timeout = uint32(timeout);
+        lock.value = uint48(msg.value);
+        lock.timeout = uint48(timeout);
         // Log info.
         emit LockBuy(assetId, orderId, hashedSecret, seller, msg.value, timeout);
     }
