@@ -53,8 +53,8 @@ contract AcuityAtomicSwapBuy {
         address seller = hashedSecretBuyLock[hashedSecret].seller;
         uint256 value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
-        // Send the funds. Cast value to uint128 for Solang compatibility.
-        payable(seller).transfer(uint128(value));
+        // Send the funds.
+        payable(seller).transfer(value);
         // Log info.
         emit UnlockBuy(hashedSecret, seller, value);
     }
@@ -70,8 +70,8 @@ contract AcuityAtomicSwapBuy {
         // Get lock value and delete lock.
         uint256 value = hashedSecretBuyLock[hashedSecret].value;
         delete hashedSecretBuyLock[hashedSecret];
-        // Send the funds. Cast value to uint128 for Solang compatibility.
-        payable(msg.sender).transfer(uint128(value));
+        // Send the funds.
+        payable(msg.sender).transfer(value);
         // Log info.
         emit TimeoutBuy(hashedSecret, msg.sender, value);
     }

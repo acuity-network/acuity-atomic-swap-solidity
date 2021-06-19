@@ -95,8 +95,8 @@ contract AcuityAtomicSwapSell {
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Remove value from order.
         orderIdValue[orderId] -= value;
-        // Return the funds. Cast value to uint128 for Solang compatibility.
-        payable(msg.sender).transfer(uint128(value));
+        // Return the funds.
+        payable(msg.sender).transfer(value);
         // Log info.
         emit RemoveFromOrder(msg.sender, orderId, assetIdPrice, value);
     }
@@ -111,8 +111,8 @@ contract AcuityAtomicSwapSell {
         uint256 value = orderIdValue[orderId];
         // Delete order.
         delete orderIdValue[orderId];
-        // Return the funds. Cast value to uint128 for Solang compatibility.
-        payable(msg.sender).transfer(uint128(value));
+        // Return the funds.
+        payable(msg.sender).transfer(value);
         // Log info.
         emit RemoveFromOrder(msg.sender, orderId, assetIdPrice, value);
     }
