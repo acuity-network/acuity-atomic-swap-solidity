@@ -9,7 +9,7 @@ contract AcuityAtomicSwapSell {
         uint32 timeout;
     }
 
-    mapping (bytes16 => uint256) orderIdValue;
+    mapping (bytes32 => uint256) orderIdValue;
 
     mapping (bytes32 => SellLock) hashedSecretSellLock;
 
