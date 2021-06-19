@@ -147,7 +147,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         uint256 value = 10;
         acuityAtomicSwapSell.lockSell(hex"1234", hashedSecret, timeout, value);
         assertEq(acuityAtomicSwapSell.getOrderValue(orderId), 40);
-        (bytes16 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
+        (bytes32 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
         assertEq(lockOrderId, orderId);
         assertEq(lockValue, value);
         assertEq(lockTimeout, timeout);
@@ -178,7 +178,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         uint256 value = 10;
 
         acuityAtomicSwapSell.lockSell(hex"1234", hashedSecret, timeout, value);
-        (bytes16 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
+        (bytes32 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
         assertEq(lockOrderId, orderId);
         assertEq(lockValue, value);
         assertEq(lockTimeout, timeout);
@@ -235,7 +235,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         uint256 value = 10;
 
         acuityAtomicSwapSell.lockSell(hex"1234", hashedSecret, timeout, value);
-        (bytes16 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
+        (bytes32 lockOrderId, uint256 lockValue, uint256 lockTimeout) = acuityAtomicSwapSell.getSellLock(hashedSecret);
         assertEq(lockOrderId, orderId);
         assertEq(lockValue, value);
         assertEq(lockTimeout, timeout);
