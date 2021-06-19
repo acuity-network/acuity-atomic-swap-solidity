@@ -16,27 +16,27 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event AddToOrder(address seller, bytes32 orderId, bytes32 assetIdPrice, uint256 value);
+    event AddToOrder(address seller, bytes32 assetIdPrice, uint256 value);
 
     /**
      * @dev
      */
-    event RemoveFromOrder(address seller, bytes32 orderId, bytes32 assetIdPrice, uint256 value);
+    event RemoveFromOrder(address seller, bytes32 assetIdPrice, uint256 value);
 
     /**
      * @dev
      */
-    event LockSell(bytes32 orderId, bytes32 hashedSecret, address seller, uint256 value, uint256 timeout);
+    event LockSell(bytes32 hashedSecret, bytes32 orderId, uint256 value, uint256 timeout);
 
     /**
      * @dev
      */
-    event UnlockSell(bytes32 hashedSecret, address buyer, uint256 value, bytes32 secret);
+    event UnlockSell(bytes32 secret, address buyer);
 
     /**
      * @dev
      */
-    event TimeoutSell(bytes32 hashedSecret, bytes32 orderId, uint256 value);
+    event TimeoutSell(bytes32 hashedSecret);
 
     /*
      * Called by seller.
@@ -47,7 +47,7 @@ contract AcuityAtomicSwapSell {
         // Add value to order.
         orderIdValue[orderId] += msg.value;
         // Log info.
-        emit AddToOrder(msg.sender, orderId, assetIdPrice, msg.value);
+        emit AddToOrder(msg.sender, assetIdPrice, msg.value);
     }
 
     /*
@@ -63,8 +63,8 @@ contract AcuityAtomicSwapSell {
         orderIdValue[oldOrderId] -= value;
         orderIdValue[newOrderId] += value;
         // Log info.
-        emit RemoveFromOrder(msg.sender, oldOrderId, oldAssetIdPrice, value);
-        emit AddToOrder(msg.sender, newOrderId, newAssetIdPrice, value);
+        emit RemoveFromOrder(msg.sender, oldAssetIdPrice, value);
+        emit AddToOrder(msg.sender, newAssetIdPrice, value);
     }
 
     /*
@@ -81,8 +81,8 @@ contract AcuityAtomicSwapSell {
         // Transfer value.
         orderIdValue[newOrderId] += value;
         // Log info.
-        emit RemoveFromOrder(msg.sender, oldOrderId, oldAssetIdPrice, value);
-        emit AddToOrder(msg.sender, newOrderId, newAssetIdPrice, value);
+        emit RemoveFromOrder(msg.sender, oldAssetIdPrice, value);
+        emit AddToOrder(msg.sender, newAssetIdPrice, value);
     }
 
     /*
@@ -98,7 +98,7 @@ contract AcuityAtomicSwapSell {
         // Return the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit RemoveFromOrder(msg.sender, orderId, assetIdPrice, value);
+        emit RemoveFromOrder(msg.sender, assetIdPrice, value);
     }
 
     /*
@@ -114,13 +114,13 @@ contract AcuityAtomicSwapSell {
         // Return the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit RemoveFromOrder(msg.sender, orderId, assetIdPrice, value);
+        emit RemoveFromOrder(msg.sender, assetIdPrice, value);
     }
 
     /*
      * Called by seller.
      */
-    function lockSell(bytes32 assetIdPrice, bytes32 hashedSecret, uint256 timeout, uint256 value) external {
+    function lockSell(bytes32 hashedSecret, bytes32 assetIdPrice, uint256 value, uint256 timeout) external {
         // Calculate orderId.
         bytes32 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice)));
         // Check there is enough.
@@ -134,7 +134,7 @@ contract AcuityAtomicSwapSell {
         lock.value = uint64(value);
         lock.timeout = uint48(timeout);
         // Log info.
-        emit LockSell(orderId, hashedSecret, msg.sender, value, timeout);
+        emit LockSell(hashedSecret, orderId, value, timeout);
     }
 
     /*
@@ -151,13 +151,13 @@ contract AcuityAtomicSwapSell {
         // Send the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit UnlockSell(hashedSecret, msg.sender, value, secret);
+        emit UnlockSell(secret, msg.sender);
     }
 
     /*
      * Called by seller if buyer did not reveal secret.
      */
-    function timeoutSell(bytes32 assetIdPrice, bytes32 hashedSecret) external {
+    function timeoutSell(bytes32 hashedSecret, bytes32 assetIdPrice) external {
         // Calculate orderId.
         bytes32 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice)));
         // Check orderId is correct and lock has timed out.
@@ -169,7 +169,7 @@ contract AcuityAtomicSwapSell {
         // Return funds to sell order.
         orderIdValue[orderId] += value;
         // Log info.
-        emit TimeoutSell(hashedSecret, orderId, value);
+        emit TimeoutSell(hashedSecret);
     }
 
     function getOrderValue(address seller, bytes32 assetIdPrice) view external returns (uint256 value) {

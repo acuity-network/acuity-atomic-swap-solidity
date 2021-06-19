@@ -14,22 +14,22 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event LockBuy(uint256 assetId, bytes32 orderId, bytes32 hashedSecret, address seller, uint256 value, uint256 timeout);
+    event LockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId, address seller, uint256 value, uint256 timeout);
 
     /**
      * @dev
      */
-    event UnlockBuy(bytes32 hashedSecret, address seller, uint256 value);
+    event UnlockBuy(bytes32 hashedSecret);
 
     /**
      * @dev
      */
-    event TimeoutBuy(bytes32 hashedSecret, address buyer, uint256 value);
+    event TimeoutBuy(bytes32 hashedSecret, address buyer);
 
     /*
      * Called by buyer.
      */
-    function lockBuy(uint256 assetId, bytes32 orderId, bytes32 hashedSecret, address seller, uint256 timeout) payable external {
+    function lockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId, address seller, uint256 timeout) payable external {
         // Ensure hashed secret is not already in use.
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         require (lock.value == 0, "Hashed secret already in use.");
@@ -38,7 +38,7 @@ contract AcuityAtomicSwapBuy {
         lock.value = uint48(msg.value);
         lock.timeout = uint48(timeout);
         // Log info.
-        emit LockBuy(assetId, orderId, hashedSecret, seller, msg.value, timeout);
+        emit LockBuy(hashedSecret, assetIdOrderId, seller, msg.value, timeout);
     }
 
     /*
@@ -57,7 +57,7 @@ contract AcuityAtomicSwapBuy {
         // Send the funds.
         payable(seller).transfer(value);
         // Log info.
-        emit UnlockBuy(hashedSecret, seller, value);
+        emit UnlockBuy(hashedSecret);
     }
 
     /*
@@ -74,7 +74,7 @@ contract AcuityAtomicSwapBuy {
         // Send the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit TimeoutBuy(hashedSecret, msg.sender, value);
+        emit TimeoutBuy(hashedSecret, msg.sender);
     }
 
     function getBuyLock(bytes32 hashedSecret) view external returns (address seller, uint256 value, uint256 timeout) {
