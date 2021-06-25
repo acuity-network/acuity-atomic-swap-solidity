@@ -16,17 +16,12 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event AddToOrder(address seller, bytes32 assetIdPrice, uint256 value);
+    event UpdateOrder(address seller, bytes32 assetIdPrice);
 
     /**
      * @dev
      */
-    event RemoveFromOrder(address seller, bytes32 assetIdPrice, uint256 value);
-
-    /**
-     * @dev
-     */
-    event LockSell(bytes32 hashedSecret, bytes32 orderId, uint256 value, uint256 timeout);
+    event LockSell(bytes32 hashedSecret);
 
     /**
      * @dev
@@ -47,7 +42,7 @@ contract AcuityAtomicSwapSell {
         // Add value to order.
         orderIdValue[orderId] += msg.value;
         // Log info.
-        emit AddToOrder(msg.sender, assetIdPrice, msg.value);
+        emit UpdateOrder(msg.sender, assetIdPrice);
     }
 
     /*
@@ -63,8 +58,8 @@ contract AcuityAtomicSwapSell {
         orderIdValue[oldOrderId] -= value;
         orderIdValue[newOrderId] += value;
         // Log info.
-        emit RemoveFromOrder(msg.sender, oldAssetIdPrice, value);
-        emit AddToOrder(msg.sender, newAssetIdPrice, value);
+        emit UpdateOrder(msg.sender, oldAssetIdPrice);
+        emit UpdateOrder(msg.sender, newAssetIdPrice);
     }
 
     /*
@@ -81,8 +76,8 @@ contract AcuityAtomicSwapSell {
         // Transfer value.
         orderIdValue[newOrderId] += value;
         // Log info.
-        emit RemoveFromOrder(msg.sender, oldAssetIdPrice, value);
-        emit AddToOrder(msg.sender, newAssetIdPrice, value);
+        emit UpdateOrder(msg.sender, oldAssetIdPrice);
+        emit UpdateOrder(msg.sender, newAssetIdPrice);
     }
 
     /*
@@ -98,7 +93,7 @@ contract AcuityAtomicSwapSell {
         // Return the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit RemoveFromOrder(msg.sender, assetIdPrice, value);
+        emit UpdateOrder(msg.sender, assetIdPrice);
     }
 
     /*
@@ -114,7 +109,7 @@ contract AcuityAtomicSwapSell {
         // Return the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit RemoveFromOrder(msg.sender, assetIdPrice, value);
+        emit UpdateOrder(msg.sender, assetIdPrice);
     }
 
     /*
@@ -134,7 +129,7 @@ contract AcuityAtomicSwapSell {
         lock.value = uint64(value);
         lock.timeout = uint48(timeout);
         // Log info.
-        emit LockSell(hashedSecret, orderId, value, timeout);
+        emit LockSell(hashedSecret);
     }
 
     /*
