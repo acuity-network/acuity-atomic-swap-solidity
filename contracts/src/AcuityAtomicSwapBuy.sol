@@ -14,7 +14,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event LockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId);
+    event LockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId, address seller, uint256 value, uint256 timeout);
 
     /**
      * @dev
@@ -38,7 +38,7 @@ contract AcuityAtomicSwapBuy {
         lock.value = uint48(msg.value);
         lock.timeout = uint48(timeout);
         // Log info.
-        emit LockBuy(hashedSecret, assetIdOrderId);
+        emit LockBuy(hashedSecret, assetIdOrderId, seller, msg.value, timeout);
     }
 
     /*
