@@ -1,2 +1,2 @@
-# acuity-atomic-swap
-Acuity Atomic Swap Exchange
+# acuity-atomic-swap-solidity
+Solidity contracts for the Acuity Atomic Swap Exchange
