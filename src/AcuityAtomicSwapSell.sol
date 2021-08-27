@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.7;
 
 contract AcuityAtomicSwapSell {
 
@@ -40,6 +40,8 @@ contract AcuityAtomicSwapSell {
 
     /*
      * Called by seller.
+     * @param assetIdPrice 16 bytes foreign assetId, 16 bytes integer unit price denominated in smallest unit of foreign asset.
+     * @param foreignAddress Address on the destination asset.
      */
     function addToOrder(bytes32 assetIdPrice, bytes32 foreignAddress) payable external {
         // Calculate orderId.
