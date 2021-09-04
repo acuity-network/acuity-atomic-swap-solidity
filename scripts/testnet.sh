@@ -2,4 +2,4 @@
 
 set -e
 
-geth --dev --rpc
+geth --dev --rpc --ws
