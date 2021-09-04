@@ -2,4 +2,4 @@
 
 set -e
 
-geth --dev --rpc --ws
+geth --dev --rpc --http.corsdomain "*" --ws
