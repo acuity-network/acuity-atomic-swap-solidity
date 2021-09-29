@@ -186,11 +186,16 @@ contract AcuityAtomicSwapSell {
         value = orderIdValue[orderId];
     }
 
-    function getSellLock(bytes32 hashedSecret) view external returns (bytes32 orderId, uint256 value, uint256 timeout) {
-        SellLock storage sellLock = hashedSecretSellLock[hashedSecret];
-        orderId = sellLock.orderId;
-        value = sellLock.value;
-        timeout = sellLock.timeout;
+    function getSellLock(bytes32 hashedSecret) view external returns (SellLock memory sellLock) {
+        sellLock = hashedSecretSellLock[hashedSecret];
+    }
+
+    function getSellLocks(bytes32[] calldata hashedSecrets) view external returns (SellLock[] memory sellLocks) {
+        sellLocks = new SellLock[](hashedSecrets.length);
+
+        for (uint i = 0; i < hashedSecrets.length; i++) {
+            sellLocks[i] = hashedSecretSellLock[hashedSecrets[i]];
+        }
     }
 
 }
