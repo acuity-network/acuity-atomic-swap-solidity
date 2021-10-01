@@ -36,25 +36,25 @@ contract AcuityAtomicSwapBuyTest is DSTest {
 
     function testControlLockBuyAlreadyInUse() public {
         address seller = address(0x3456);
-        uint256 timeout = block.timestamp + 1000;
-        acuityAtomicSwapBuy.lockBuy{value: 10}(hex"5678", hex"1234", payable(seller), timeout);
-        acuityAtomicSwapBuy.lockBuy{value: 10}(hex"3456", hex"1234", payable(seller), timeout);
+        uint32 timeout = uint32(block.timestamp) + 1000;
+        acuityAtomicSwapBuy.lockBuy{value: 10 * 1e9}(hex"5678", hex"1234", payable(seller), timeout);
+        acuityAtomicSwapBuy.lockBuy{value: 10 * 1e9}(hex"3456", hex"1234", payable(seller), timeout);
     }
 
     function testFailLockBuyAlreadyInUse() public {
         address seller = address(0x3456);
-        uint256 timeout = block.timestamp + 1000;
-        acuityAtomicSwapBuy.lockBuy{value: 10}(hex"5678", hex"1234", payable(seller), timeout);
-        acuityAtomicSwapBuy.lockBuy{value: 10}(hex"5678", hex"1234", payable(seller), timeout);
+        uint32 timeout = uint32(block.timestamp) + 1000;
+        acuityAtomicSwapBuy.lockBuy{value: 10 * 1e9}(hex"5678", hex"1234", payable(seller), timeout);
+        acuityAtomicSwapBuy.lockBuy{value: 10 * 1e9}(hex"5678", hex"1234", payable(seller), timeout);
     }
 
     function testLockBuy() public {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         address seller = address(0x3456);
-        uint256 timeout = block.timestamp + 1000;
-        acuityAtomicSwapBuy.lockBuy{value: 10}(hashedSecret, hex"5678", payable(seller), timeout);
-        assertEq(address(acuityAtomicSwapBuy).balance, 10);
+        uint32 timeout = uint32(block.timestamp) + 1000;
+        acuityAtomicSwapBuy.lockBuy{value: 10 * 1e9}(hashedSecret, hex"5678", payable(seller), timeout);
+        assertEq(address(acuityAtomicSwapBuy).balance, 10 * 1e9);
         AcuityAtomicSwapBuy.BuyLock memory buyLock = acuityAtomicSwapBuy.getBuyLock(hashedSecret);
         assertEq(buyLock.seller, seller);
         assertEq(buyLock.value, 10);
@@ -65,7 +65,7 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         address seller = address(accountProxy);
-        acuityAtomicSwapBuy.lockBuy{value: 10}(hashedSecret, hex"5678", payable(seller), block.timestamp + 1000);
+        acuityAtomicSwapBuy.lockBuy{value: 10}(hashedSecret, hex"5678", payable(seller), uint32(block.timestamp) + 1000);
         accountProxy.unlockBuy(secret);
     }
 
@@ -73,7 +73,7 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         address seller = address(accountProxy);
-        acuityAtomicSwapBuy.lockBuy{value: 10}(hashedSecret, hex"5678", payable(seller), block.timestamp);
+        acuityAtomicSwapBuy.lockBuy{value: 10}(hashedSecret, hex"5678", payable(seller), uint32(block.timestamp));
         acuityAtomicSwapBuy.unlockBuy(secret);
     }
 
@@ -82,15 +82,15 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         address seller = address(accountProxy);
-        uint256 timeout = block.timestamp + 1000;
-        acuityAtomicSwapBuy.lockBuy{value: value}(hashedSecret, hex"5678", payable(seller), timeout);
+        uint32 timeout = uint32(block.timestamp) + 1000;
+        acuityAtomicSwapBuy.lockBuy{value: value * 1e9}(hashedSecret, hex"5678", payable(seller), timeout);
 
         AcuityAtomicSwapBuy.BuyLock memory buyLock = acuityAtomicSwapBuy.getBuyLock(hashedSecret);
         assertEq(buyLock.seller, seller);
         assertEq(buyLock.value, value);
         assertEq(buyLock.timeout, timeout);
 
-        assertEq(address(acuityAtomicSwapBuy).balance, value);
+        assertEq(address(acuityAtomicSwapBuy).balance, value * 1e9);
         uint256 startBalance = address(seller).balance;
         accountProxy.unlockBuy(secret);
         buyLock = acuityAtomicSwapBuy.getBuyLock(hashedSecret);
@@ -98,14 +98,14 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         assertEq(buyLock.value, 0);
         assertEq(buyLock.timeout, 0);
         assertEq(address(acuityAtomicSwapBuy).balance, 0);
-        assertEq(address(seller).balance, startBalance + value);
+        assertEq(address(seller).balance, startBalance + value * 1e9);
     }
 
     function testControlTimeoutBuyNotTimedOut() public {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         address seller = address(0x3456);
-        acuityAtomicSwapBuy.lockBuy{value: 10}(hashedSecret, hex"5678", payable(seller), block.timestamp);
+        acuityAtomicSwapBuy.lockBuy{value: 10}(hashedSecret, hex"5678", payable(seller), uint32(block.timestamp));
         acuityAtomicSwapBuy.timeoutBuy(secret);
     }
 
@@ -113,7 +113,7 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         address seller = address(0x3456);
-        acuityAtomicSwapBuy.lockBuy{value: 10}(hashedSecret, hex"5678", payable(seller), block.timestamp + 1000);
+        acuityAtomicSwapBuy.lockBuy{value: 10}(hashedSecret, hex"5678", payable(seller), uint32(block.timestamp) + 1000);
         acuityAtomicSwapBuy.timeoutBuy(secret);
     }
 
@@ -122,15 +122,15 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         address seller = address(0x3456);
-        uint256 timeout = block.timestamp;
-        acuityAtomicSwapBuy.lockBuy{value: value}(hashedSecret, hex"5678", payable(seller), timeout);
+        uint32 timeout = uint32(block.timestamp);
+        acuityAtomicSwapBuy.lockBuy{value: value * 1e9}(hashedSecret, hex"5678", payable(seller), timeout);
 
         AcuityAtomicSwapBuy.BuyLock memory buyLock = acuityAtomicSwapBuy.getBuyLock(hashedSecret);
         assertEq(buyLock.seller, seller);
         assertEq(buyLock.value, value);
         assertEq(buyLock.timeout, timeout);
 
-        assertEq(address(acuityAtomicSwapBuy).balance, value);
+        assertEq(address(acuityAtomicSwapBuy).balance, value * 1e9);
         uint256 sellerBalance = address(seller).balance;
         uint256 buyerBalance = address(this).balance;
         acuityAtomicSwapBuy.timeoutBuy(secret);
@@ -140,7 +140,7 @@ contract AcuityAtomicSwapBuyTest is DSTest {
         assertEq(buyLock.timeout, 0);
         assertEq(address(acuityAtomicSwapBuy).balance, 0);
         assertEq(address(seller).balance, sellerBalance);
-        assertEq(address(this).balance, buyerBalance + value);
+        assertEq(address(this).balance, buyerBalance + value * 1e9);
     }
 
 }

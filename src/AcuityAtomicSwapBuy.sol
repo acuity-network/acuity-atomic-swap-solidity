@@ -5,8 +5,8 @@ contract AcuityAtomicSwapBuy {
 
     struct BuyLock {
         address seller;     // address payment will be sent to
-        uint48 value;        // value to send
-        uint48 timeout;
+        uint64 value;        // value to send
+        uint32 timeout;
     }
 
     mapping (bytes32 => BuyLock) hashedSecretBuyLock;
@@ -14,7 +14,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event LockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId, address seller, uint48 value, uint48 timeout, address buyer);
+    event LockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId, address seller, uint64 value, uint32 timeout, address buyer);
 
     /**
      * @dev
@@ -29,16 +29,17 @@ contract AcuityAtomicSwapBuy {
     /*
      * Called by buyer.
      */
-    function lockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId, address seller, uint256 timeout) payable external {
+    function lockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId, address seller, uint32 timeout) payable external {
         // Ensure hashed secret is not already in use.
         BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
         require (lock.value == 0, "Hashed secret already in use.");
+        uint64 lockValue = uint64(msg.value / 1e9);
         // Store lock data.
         lock.seller = seller;
-        lock.value = uint48(msg.value);
-        lock.timeout = uint48(timeout);
+        lock.value = lockValue;
+        lock.timeout = timeout;
         // Log info.
-        emit LockBuy(hashedSecret, assetIdOrderId, seller, uint48(msg.value), uint48(timeout), msg.sender);
+        emit LockBuy(hashedSecret, assetIdOrderId, seller, lockValue, timeout, msg.sender);
     }
 
     /*
@@ -49,7 +50,7 @@ contract AcuityAtomicSwapBuy {
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         // Get lock data.
         address seller = hashedSecretBuyLock[hashedSecret].seller;
-        uint256 value = hashedSecretBuyLock[hashedSecret].value;
+        uint256 value = hashedSecretBuyLock[hashedSecret].value * 1e9;
         // Check the caller is the seller.
         require (msg.sender == seller, "Lock can only be unlocked by seller.");
         // Delete lock.
@@ -69,7 +70,7 @@ contract AcuityAtomicSwapBuy {
         // Check lock has timed out.
         require (hashedSecretBuyLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
         // Get lock value and delete lock.
-        uint256 value = hashedSecretBuyLock[hashedSecret].value;
+        uint256 value = hashedSecretBuyLock[hashedSecret].value * 1e9;
         delete hashedSecretBuyLock[hashedSecret];
         // Send the funds.
         payable(msg.sender).transfer(value);

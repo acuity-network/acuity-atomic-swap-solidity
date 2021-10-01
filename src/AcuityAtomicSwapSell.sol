@@ -6,7 +6,7 @@ contract AcuityAtomicSwapSell {
     struct SellLock {
         bytes16 orderId;
         uint64 value;
-        uint48 timeout;
+        uint32 timeout;
     }
 
     mapping (bytes32 => uint256) orderIdValue;
@@ -26,7 +26,7 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event LockSell(bytes32 hashedSecret, bytes32 orderId, uint64 value, uint48 timeout);
+    event LockSell(bytes32 hashedSecret, bytes32 orderId, uint64 value, uint32 timeout);
 
     /**
      * @dev
@@ -126,21 +126,23 @@ contract AcuityAtomicSwapSell {
     /*
      * Called by seller.
      */
-    function lockSell(bytes32 hashedSecret, bytes32 assetIdPrice, bytes32 foreignAddress, uint256 value, uint256 timeout) external {
+    function lockSell(bytes32 hashedSecret, bytes32 assetIdPrice, bytes32 foreignAddress, uint64 value, uint32 timeout) external {
         // Calculate orderId.
         bytes32 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
+        // Calculate real lock value;
+        uint256 realValue = value * 1e9;
         // Check there is enough.
-        require (orderIdValue[orderId] >= value, "Sell order not big enough.");
+        require (orderIdValue[orderId] >= realValue, "Sell order not big enough.");
         // Ensure hashed secret is not already in use.
         SellLock storage lock = hashedSecretSellLock[hashedSecret];
         require (lock.value == 0, "Hashed secret already in use.");
         // Move value into sell lock.
-        orderIdValue[orderId] -= value;
+        orderIdValue[orderId] -= realValue;
         lock.orderId = bytes16(orderId);
-        lock.value = uint64(value);
-        lock.timeout = uint48(timeout);
+        lock.value = value;
+        lock.timeout = timeout;
         // Log info.
-        emit LockSell(hashedSecret, orderId, uint64(value), uint48(timeout));
+        emit LockSell(hashedSecret, orderId, value, timeout);
     }
 
     /*
@@ -152,7 +154,7 @@ contract AcuityAtomicSwapSell {
         // Check sell lock has not timed out.
         require (hashedSecretSellLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
         // Get lock value and delete lock.
-        uint256 value = hashedSecretSellLock[hashedSecret].value;
+        uint256 value = hashedSecretSellLock[hashedSecret].value * 1e9;
         delete hashedSecretSellLock[hashedSecret];
         // Send the funds.
         payable(msg.sender).transfer(value);
@@ -170,7 +172,7 @@ contract AcuityAtomicSwapSell {
         require (hashedSecretSellLock[hashedSecret].orderId == orderId, "Wrong orderId.");
         require (hashedSecretSellLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
         // Get lock value and delete lock.
-        uint256 value = hashedSecretSellLock[hashedSecret].value;
+        uint256 value = hashedSecretSellLock[hashedSecret].value * 1e9;
         delete hashedSecretSellLock[hashedSecret];
         // Return funds to sell order.
         orderIdValue[orderId] += value;
