@@ -130,7 +130,7 @@ contract AcuityAtomicSwapSell {
         // Calculate orderId.
         bytes32 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
         // Calculate real lock value;
-        uint256 realValue = value * 1e9;
+        uint256 realValue = uint256(value) * 1e9;
         // Check there is enough.
         require (orderIdValue[orderId] >= realValue, "Sell order not big enough.");
         // Ensure hashed secret is not already in use.
@@ -154,7 +154,7 @@ contract AcuityAtomicSwapSell {
         // Check sell lock has not timed out.
         require (hashedSecretSellLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
         // Get lock value and delete lock.
-        uint256 value = hashedSecretSellLock[hashedSecret].value * 1e9;
+        uint256 value = uint256(hashedSecretSellLock[hashedSecret].value) * 1e9;
         delete hashedSecretSellLock[hashedSecret];
         // Send the funds.
         payable(msg.sender).transfer(value);
@@ -172,7 +172,7 @@ contract AcuityAtomicSwapSell {
         require (hashedSecretSellLock[hashedSecret].orderId == orderId, "Wrong orderId.");
         require (hashedSecretSellLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
         // Get lock value and delete lock.
-        uint256 value = hashedSecretSellLock[hashedSecret].value * 1e9;
+        uint256 value = uint256(hashedSecretSellLock[hashedSecret].value) * 1e9;
         delete hashedSecretSellLock[hashedSecret];
         // Return funds to sell order.
         orderIdValue[orderId] += value;
