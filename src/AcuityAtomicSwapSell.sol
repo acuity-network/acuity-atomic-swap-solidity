@@ -3,15 +3,9 @@ pragma solidity ^0.8.7;
 
 contract AcuityAtomicSwapSell {
 
-    struct SellLock {
-        bytes16 orderId;
-        uint64 value;
-        uint32 timeout;
-    }
-
     mapping (bytes32 => uint256) orderIdValue;
 
-    mapping (bytes32 => SellLock) hashedSecretSellLock;
+    mapping (bytes32 => uint256) sellLockIdValue;
 
     /**
      * @dev
@@ -26,17 +20,17 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event LockSell(bytes32 hashedSecret, bytes32 orderId, uint64 value, uint32 timeout);
+    event LockSell(bytes16 orderId, bytes32 hashedSecret, uint256 timeout, uint256 value);
 
     /**
      * @dev
      */
-    event UnlockSell(bytes32 secret, address buyer);
+    event UnlockSell(bytes16 orderId, bytes32 secret, address buyer);
 
     /**
      * @dev
      */
-    event TimeoutSell(bytes32 hashedSecret);
+    event TimeoutSell(bytes16 orderId, bytes32 hashedSecret);
 
     /*
      * Called by seller.
@@ -45,7 +39,7 @@ contract AcuityAtomicSwapSell {
      */
     function addToOrder(bytes32 assetIdPrice, bytes32 foreignAddress) payable external {
         // Calculate orderId.
-        bytes32 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
         // Add value to order.
         orderIdValue[orderId] += msg.value;
         // Log info.
@@ -55,9 +49,7 @@ contract AcuityAtomicSwapSell {
     /*
      * Called by seller.
      */
-    function changeOrder(bytes32 oldAssetIdPrice, bytes32 oldForeignAddress,
-        bytes32 newAssetIdPrice, bytes32 newForeignAddress, uint256 value) external
-    {
+    function changeOrder(bytes32 oldAssetIdPrice, bytes32 oldForeignAddress, bytes32 newAssetIdPrice, bytes32 newForeignAddress, uint256 value) external {
         // Calculate orderIds.
         bytes32 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldAssetIdPrice, oldForeignAddress)));
         bytes32 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newAssetIdPrice, newForeignAddress)));
@@ -74,9 +66,7 @@ contract AcuityAtomicSwapSell {
     /*
      * Called by seller.
      */
-    function changeOrder(bytes32 oldAssetIdPrice, bytes32 oldForeignAddress,
-        bytes32 newAssetIdPrice, bytes32 newForeignAddress) external
-    {
+    function changeOrder(bytes32 oldAssetIdPrice, bytes32 oldForeignAddress, bytes32 newAssetIdPrice, bytes32 newForeignAddress) external {
         // Calculate orderIds.
         bytes32 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldAssetIdPrice, oldForeignAddress)));
         bytes32 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newAssetIdPrice, newForeignAddress)));
@@ -96,7 +86,7 @@ contract AcuityAtomicSwapSell {
      */
     function removeFromOrder(bytes32 assetIdPrice, bytes32 foreignAddress, uint256 value) external {
         // Calculate orderId.
-        bytes32 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
         // Check there is enough.
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Remove value from order.
@@ -112,7 +102,7 @@ contract AcuityAtomicSwapSell {
      */
     function removeFromOrder(bytes32 assetIdPrice, bytes32 foreignAddress) external {
         // Calculate orderId.
-        bytes32 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
         // Get order value.
         uint256 value = orderIdValue[orderId];
         // Delete order.
@@ -126,78 +116,69 @@ contract AcuityAtomicSwapSell {
     /*
      * Called by seller.
      */
-    function lockSell(bytes32 hashedSecret, bytes32 assetIdPrice, bytes32 foreignAddress, uint64 value, uint32 timeout) external {
+    function lockSell(bytes32 assetIdPrice, bytes32 foreignAddress, bytes32 hashedSecret, uint256 timeout, uint256 value) external {
         // Calculate orderId.
-        bytes32 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
-        // Calculate real lock value;
-        uint256 realValue = uint256(value) * 1e9;
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
         // Check there is enough.
-        require (orderIdValue[orderId] >= realValue, "Sell order not big enough.");
-        // Ensure hashed secret is not already in use.
-        SellLock storage lock = hashedSecretSellLock[hashedSecret];
-        require (lock.value == 0, "Hashed secret already in use.");
+        require (orderIdValue[orderId] >= value, "Sell order not big enough.");
+        // Calculate sellLockId.
+        bytes32 sellLockId = keccak256(abi.encodePacked(orderId, hashedSecret, timeout));
+        // Ensure sellLockId is not already in use.
+        require (sellLockIdValue[sellLockId] == 0, "Sell lock already exists.");
         // Move value into sell lock.
-        orderIdValue[orderId] -= realValue;
-        lock.orderId = bytes16(orderId);
-        lock.value = value;
-        lock.timeout = timeout;
+        orderIdValue[orderId] -= value;
+        sellLockIdValue[sellLockId] = value;
         // Log info.
-        emit LockSell(hashedSecret, orderId, value, timeout);
+        emit LockSell(orderId, hashedSecret, timeout, value);
     }
 
     /*
      * Called by buyer.
      */
-    function unlockSell(bytes32 secret) external {
-        // Calculate hashed secret.
-        bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+    function unlockSell(bytes16 orderId, bytes32 secret, uint256 timeout) external {
         // Check sell lock has not timed out.
-        require (hashedSecretSellLock[hashedSecret].timeout > block.timestamp, "Lock timed out.");
-        // Get lock value and delete lock.
-        uint256 value = uint256(hashedSecretSellLock[hashedSecret].value) * 1e9;
-        delete hashedSecretSellLock[hashedSecret];
+        require (timeout > block.timestamp, "Lock timed out.");
+        // Calculate sellLockId.
+        bytes32 sellLockId = keccak256(abi.encodePacked(orderId, keccak256(abi.encodePacked(secret)), timeout));
+        // Get lock value;
+        uint256 value = sellLockIdValue[sellLockId];
+        // Delete lock.
+        delete sellLockIdValue[sellLockId];
         // Send the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit UnlockSell(secret, msg.sender);
+        emit UnlockSell(orderId, secret, msg.sender);
     }
 
     /*
      * Called by seller if buyer did not reveal secret.
      */
-    function timeoutSell(bytes32 hashedSecret, bytes32 assetIdPrice, bytes32 foreignAddress) external {
-        // Calculate orderId.
-        bytes32 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
-        // Check orderId is correct and lock has timed out.
-        require (hashedSecretSellLock[hashedSecret].orderId == orderId, "Wrong orderId.");
-        require (hashedSecretSellLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
-        // Get lock value and delete lock.
-        uint256 value = uint256(hashedSecretSellLock[hashedSecret].value) * 1e9;
-        delete hashedSecretSellLock[hashedSecret];
-        // Return funds to sell order.
-        orderIdValue[orderId] += value;
+    function timeoutSell(bytes16 orderId, bytes32 hashedSecret, uint256 timeout) external {
+        // Check lock has timed out.
+        require (timeout <= block.timestamp, "Lock not timed out.");
+        // Calculate sellLockId.
+        bytes32 sellLockId = keccak256(abi.encodePacked(orderId, hashedSecret, timeout));
+        // Return funds to sell order and delete lock.
+        orderIdValue[orderId] += sellLockIdValue[sellLockId];
+        delete sellLockIdValue[sellLockId];
         // Log info.
-        emit TimeoutSell(hashedSecret);
+        emit TimeoutSell(orderId, hashedSecret);
     }
 
     function getOrderValue(address seller, bytes32 assetIdPrice, bytes32 foreignAddress) view external returns (uint256 value) {
         value = orderIdValue[bytes16(keccak256(abi.encodePacked(seller, assetIdPrice, foreignAddress)))];
     }
 
-    function getOrderValue(bytes32 orderId) view external returns (uint256 value) {
+    function getOrderValue(bytes16 orderId) view external returns (uint256 value) {
         value = orderIdValue[orderId];
     }
 
-    function getSellLock(bytes32 hashedSecret) view external returns (SellLock memory sellLock) {
-        sellLock = hashedSecretSellLock[hashedSecret];
+    function getSellLock(bytes16 orderId, bytes32 hashedSecret, uint256 timeout) view external returns (uint256 value) {
+        value = sellLockIdValue[keccak256(abi.encodePacked(orderId, hashedSecret, timeout))];
     }
 
-    function getSellLocks(bytes32[] calldata hashedSecrets) view external returns (SellLock[] memory sellLocks) {
-        sellLocks = new SellLock[](hashedSecrets.length);
-
-        for (uint i = 0; i < hashedSecrets.length; i++) {
-            sellLocks[i] = hashedSecretSellLock[hashedSecrets[i]];
-        }
+    function getSellLock(bytes32 sellLockId) view external returns (uint256 value) {
+        value = sellLockIdValue[sellLockId];
     }
 
 }

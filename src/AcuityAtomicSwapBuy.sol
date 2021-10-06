@@ -3,85 +3,78 @@ pragma solidity ^0.8.7;
 
 contract AcuityAtomicSwapBuy {
 
-    struct BuyLock {
-        address seller;     // address payment will be sent to
-        uint64 value;        // value to send
-        uint32 timeout;
-    }
-
-    mapping (bytes32 => BuyLock) hashedSecretBuyLock;
+    mapping (bytes32 => uint256) buyLockIdValue;
 
     /**
      * @dev
      */
-    event LockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId, address seller, uint64 value, uint32 timeout, address buyer);
+    event LockBuy(address buyer, address seller, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 assetIdOrderId);
 
     /**
      * @dev
      */
-    event UnlockBuy(bytes32 hashedSecret);
+    event UnlockBuy(address buyer, bytes32 secret, address seller);
 
     /**
      * @dev
      */
-    event TimeoutBuy(bytes32 hashedSecret, address buyer);
+    event TimeoutBuy(address buyer, bytes32 secret);
 
     /*
      * Called by buyer.
      */
-    function lockBuy(bytes32 hashedSecret, bytes32 assetIdOrderId, address seller, uint32 timeout) payable external {
-        // Ensure hashed secret is not already in use.
-        BuyLock storage lock = hashedSecretBuyLock[hashedSecret];
-        require (lock.value == 0, "Hashed secret already in use.");
-        uint64 lockValue = uint64(msg.value / 1e9);
-        // Store lock data.
-        lock.seller = seller;
-        lock.value = lockValue;
-        lock.timeout = timeout;
+    function lockBuy(address seller, bytes32 hashedSecret, uint256 timeout, bytes32 assetIdOrderId) payable external {
+        // Calculate buyLockId.
+        bytes32 buyLockId = keccak256(abi.encodePacked(msg.sender, seller, hashedSecret, timeout));
+        // Ensure buyLockId is not already in use.
+        require (buyLockIdValue[buyLockId] == 0, "Buy lock already exists.");
+        buyLockIdValue[buyLockId] = msg.value;
         // Log info.
-        emit LockBuy(hashedSecret, assetIdOrderId, seller, lockValue, timeout, msg.sender);
+        emit LockBuy(msg.sender, seller, hashedSecret, timeout, msg.value, assetIdOrderId);
     }
 
     /*
      * Called by seller.
      */
-    function unlockBuy(bytes32 secret) external {
-        // Calculate hashed secret.
-        bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
-        // Get lock data.
-        address seller = hashedSecretBuyLock[hashedSecret].seller;
-        uint256 value = uint256(hashedSecretBuyLock[hashedSecret].value) * 1e9;
-        // Check the caller is the seller.
-        require (msg.sender == seller, "Lock can only be unlocked by seller.");
+    function unlockBuy(address buyer, bytes32 secret, uint256 timeout) external {
+        // Calculate buyLockId.
+        bytes32 buyLockId = keccak256(abi.encodePacked(buyer, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
+        // Get lock value;
+        uint256 value = buyLockIdValue[buyLockId];
         // Delete lock.
-        delete hashedSecretBuyLock[hashedSecret];
+        delete buyLockIdValue[buyLockId];
         // Send the funds.
-        payable(seller).transfer(value);
+        payable(msg.sender).transfer(value);
         // Log info.
-        emit UnlockBuy(hashedSecret);
+        emit UnlockBuy(buyer, secret, msg.sender);
     }
 
     /*
      * Called by buyer if seller did not lock.
      */
-    function timeoutBuy(bytes32 secret) external {
-        // Calculate hashed secret.
-        bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+    function timeoutBuy(address seller, bytes32 secret, uint256 timeout) external {
         // Check lock has timed out.
-        require (hashedSecretBuyLock[hashedSecret].timeout <= block.timestamp, "Lock not timed out.");
-        // Get lock value and delete lock.
-        uint256 value = uint256(hashedSecretBuyLock[hashedSecret].value) * 1e9;
-        delete hashedSecretBuyLock[hashedSecret];
+        require (timeout <= block.timestamp, "Lock not timed out.");
+        // Calculate buyLockId.
+        bytes32 buyLockId = keccak256(abi.encodePacked(msg.sender, seller, keccak256(abi.encodePacked(secret)), timeout));
+        // Get lock value;
+        uint256 value = buyLockIdValue[buyLockId];
+        // Delete lock.
+        delete buyLockIdValue[buyLockId];
         // Send the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit TimeoutBuy(hashedSecret, msg.sender);
+        emit TimeoutBuy(msg.sender, secret);
     }
 
-    function getBuyLock(bytes32 hashedSecret) view external returns (BuyLock memory buyLock) {
-        buyLock = hashedSecretBuyLock[hashedSecret];
+    function getBuyLock(address buyer, address seller, bytes32 hashedSecret, uint256 timeout) view external returns (uint256 value) {
+        value = buyLockIdValue[keccak256(abi.encodePacked(buyer, seller, hashedSecret, timeout))];
     }
 
+    function getBuyLock(bytes32 buyLockId) view external returns (uint256 value) {
+        value = buyLockIdValue[buyLockId];
+    }
+/*
     function getBuyLocks(bytes32[] calldata hashedSecrets) view external returns (BuyLock[] memory buyLocks) {
         buyLocks = new BuyLock[](hashedSecrets.length);
 
@@ -89,5 +82,5 @@ contract AcuityAtomicSwapBuy {
             buyLocks[i] = hashedSecretBuyLock[hashedSecrets[i]];
         }
     }
-
+*/
 }
