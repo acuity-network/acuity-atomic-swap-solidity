@@ -171,8 +171,8 @@ contract AcuityAtomicSwapSellTest is DSTest {
     function testUnlockSell() public {
         bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, bytes32(hex"1234"), bytes32(hex"1234"))));
         acuityAtomicSwapSell.addToOrder{value: 50}(hex"1234", hex"1234");
-        bytes32 secret = hex"1234";
-        bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint256 timeout = block.timestamp + 1000;
         uint256 value = 10;
 
