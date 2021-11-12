@@ -3,4 +3,4 @@
 set -e
 
 . ~/.nix-profile/etc/profile.d/nix.sh
-dapp --use solc:0.8.9 --verbose --extract build
+dapp --use solc:0.8.10 --verbose --extract build
