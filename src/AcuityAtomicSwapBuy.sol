@@ -8,7 +8,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event LockBuy(address buyer, address seller, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 assetIdOrderId);
+    event LockBuy(address buyer, address seller, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 assetIdOrderId, bytes32 foreignAddress);
 
     /**
      * @dev
@@ -23,14 +23,14 @@ contract AcuityAtomicSwapBuy {
     /*
      * Called by buyer.
      */
-    function lockBuy(address seller, bytes32 hashedSecret, uint256 timeout, bytes32 assetIdOrderId) payable external {
+    function lockBuy(address seller, bytes32 hashedSecret, uint256 timeout, bytes32 assetIdOrderId, bytes32 foreignAddress) payable external {
         // Calculate buyLockId.
         bytes32 buyLockId = keccak256(abi.encodePacked(msg.sender, seller, hashedSecret, timeout));
         // Ensure buyLockId is not already in use.
         require (buyLockIdValue[buyLockId] == 0, "Buy lock already exists.");
         buyLockIdValue[buyLockId] = msg.value;
         // Log info.
-        emit LockBuy(msg.sender, seller, hashedSecret, timeout, msg.value, assetIdOrderId);
+        emit LockBuy(msg.sender, seller, hashedSecret, timeout, msg.value, assetIdOrderId, foreignAddress);
     }
 
     /*
