@@ -10,12 +10,12 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event AddToOrder(address seller, bytes32 assetIdPrice, bytes32 foreignAddress, uint256 value);
+    event AddToOrder(address seller, bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress, uint256 value);
 
     /**
      * @dev
      */
-    event RemoveFromOrder(address seller, bytes32 assetIdPrice, bytes32 foreignAddress, uint256 value);
+    event RemoveFromOrder(address seller, bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress, uint256 value);
 
     /**
      * @dev
@@ -34,42 +34,42 @@ contract AcuityAtomicSwapSell {
 
     /*
      * Called by seller.
-     * @param assetIdPrice 16 bytes foreign assetId, 16 bytes integer unit price denominated in smallest unit of foreign asset.
+     * @param chainIdAdapterIdAssetIdPrice 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId, 16 bytes integer unit price denominated in smallest unit of foreign asset.
      * @param foreignAddress Address on the destination asset.
      */
-    function addToOrder(bytes32 assetIdPrice, bytes32 foreignAddress) payable external {
+    function addToOrder(bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress) payable external {
         // Calculate orderId.
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress)));
         // Add value to order.
         orderIdValue[orderId] += msg.value;
         // Log info.
-        emit AddToOrder(msg.sender, assetIdPrice, foreignAddress, msg.value);
+        emit AddToOrder(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress, msg.value);
     }
 
     /*
      * Called by seller.
      */
-    function changeOrder(bytes32 oldAssetIdPrice, bytes32 oldForeignAddress, bytes32 newAssetIdPrice, bytes32 newForeignAddress, uint256 value) external {
+    function changeOrder(bytes32 oldChainIdAdapterIdAssetIdPrice, bytes32 oldForeignAddress, bytes32 newChainIdAdapterIdAssetIdPrice, bytes32 newForeignAddress, uint256 value) external {
         // Calculate orderIds.
-        bytes32 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldAssetIdPrice, oldForeignAddress)));
-        bytes32 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newAssetIdPrice, newForeignAddress)));
+        bytes32 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress)));
+        bytes32 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress)));
         // Check there is enough.
         require (orderIdValue[oldOrderId] >= value, "Sell order not big enough.");
         // Transfer value.
         orderIdValue[oldOrderId] -= value;
         orderIdValue[newOrderId] += value;
         // Log info.
-        emit RemoveFromOrder(msg.sender, oldAssetIdPrice, oldForeignAddress, value);
-        emit AddToOrder(msg.sender, newAssetIdPrice, newForeignAddress, value);
+        emit RemoveFromOrder(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress, value);
+        emit AddToOrder(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress, value);
     }
 
     /*
      * Called by seller.
      */
-    function changeOrder(bytes32 oldAssetIdPrice, bytes32 oldForeignAddress, bytes32 newAssetIdPrice, bytes32 newForeignAddress) external {
+    function changeOrder(bytes32 oldChainIdAdapterIdAssetIdPrice, bytes32 oldForeignAddress, bytes32 newChainIdAdapterIdAssetIdPrice, bytes32 newForeignAddress) external {
         // Calculate orderIds.
-        bytes32 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldAssetIdPrice, oldForeignAddress)));
-        bytes32 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newAssetIdPrice, newForeignAddress)));
+        bytes32 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress)));
+        bytes32 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress)));
         // Get order value.
         uint256 value = orderIdValue[oldOrderId];
         // Delete old order.
@@ -77,16 +77,16 @@ contract AcuityAtomicSwapSell {
         // Transfer value.
         orderIdValue[newOrderId] += value;
         // Log info.
-        emit RemoveFromOrder(msg.sender, oldAssetIdPrice, oldForeignAddress, value);
-        emit AddToOrder(msg.sender, newAssetIdPrice, newForeignAddress, value);
+        emit RemoveFromOrder(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress, value);
+        emit AddToOrder(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress, value);
     }
 
     /*
      * Called by seller.
      */
-    function removeFromOrder(bytes32 assetIdPrice, bytes32 foreignAddress, uint256 value) external {
+    function removeFromOrder(bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress, uint256 value) external {
         // Calculate orderId.
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress)));
         // Check there is enough.
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Remove value from order.
@@ -94,15 +94,15 @@ contract AcuityAtomicSwapSell {
         // Return the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit RemoveFromOrder(msg.sender, assetIdPrice, foreignAddress, value);
+        emit RemoveFromOrder(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress, value);
     }
 
     /*
      * Called by seller.
      */
-    function removeFromOrder(bytes32 assetIdPrice, bytes32 foreignAddress) external {
+    function removeFromOrder(bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress) external {
         // Calculate orderId.
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress)));
         // Get order value.
         uint256 value = orderIdValue[orderId];
         // Delete order.
@@ -110,15 +110,15 @@ contract AcuityAtomicSwapSell {
         // Return the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit RemoveFromOrder(msg.sender, assetIdPrice, foreignAddress, value);
+        emit RemoveFromOrder(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress, value);
     }
 
     /*
      * Called by seller.
      */
-    function lockSell(bytes32 assetIdPrice, bytes32 foreignAddress, bytes32 hashedSecret, address buyer, uint256 timeout, uint256 value) external {
+    function lockSell(bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress, bytes32 hashedSecret, address buyer, uint256 timeout, uint256 value) external {
         // Calculate orderId.
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, assetIdPrice, foreignAddress)));
+        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress)));
         // Check there is enough.
         require (orderIdValue[orderId] >= value, "Sell order not big enough.");
         // Calculate sellLockId.
@@ -165,8 +165,8 @@ contract AcuityAtomicSwapSell {
         emit TimeoutSell(orderId, hashedSecret);
     }
 
-    function getOrderValue(address seller, bytes32 assetIdPrice, bytes32 foreignAddress) view external returns (uint256 value) {
-        value = orderIdValue[bytes16(keccak256(abi.encodePacked(seller, assetIdPrice, foreignAddress)))];
+    function getOrderValue(address seller, bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress) view external returns (uint256 value) {
+        value = orderIdValue[bytes16(keccak256(abi.encodePacked(seller, chainIdAdapterIdAssetIdPrice, foreignAddress)))];
     }
 
     function getOrderValue(bytes16 orderId) view external returns (uint256 value) {
