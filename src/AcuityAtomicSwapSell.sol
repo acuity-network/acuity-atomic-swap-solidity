@@ -10,12 +10,12 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event AddToOrder(address seller, bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress, uint256 value);
+    event AddToOrder(bytes16 orderId, address seller, bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress, uint256 value);
 
     /**
      * @dev
      */
-    event RemoveFromOrder(address seller, bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress, uint256 value);
+    event RemoveFromOrder(bytes16 orderId, uint256 value);
 
     /**
      * @dev
@@ -43,7 +43,7 @@ contract AcuityAtomicSwapSell {
         // Add value to order.
         orderIdValue[orderId] += msg.value;
         // Log info.
-        emit AddToOrder(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress, msg.value);
+        emit AddToOrder(orderId, msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress, msg.value);
     }
 
     /*
@@ -51,16 +51,16 @@ contract AcuityAtomicSwapSell {
      */
     function changeOrder(bytes32 oldChainIdAdapterIdAssetIdPrice, bytes32 oldForeignAddress, bytes32 newChainIdAdapterIdAssetIdPrice, bytes32 newForeignAddress, uint256 value) external {
         // Calculate orderIds.
-        bytes32 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress)));
-        bytes32 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress)));
+        bytes16 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress)));
+        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress)));
         // Check there is enough.
         require (orderIdValue[oldOrderId] >= value, "Sell order not big enough.");
         // Transfer value.
         orderIdValue[oldOrderId] -= value;
         orderIdValue[newOrderId] += value;
         // Log info.
-        emit RemoveFromOrder(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress, value);
-        emit AddToOrder(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress, value);
+        emit RemoveFromOrder(oldOrderId, value);
+        emit AddToOrder(newOrderId, msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress, value);
     }
 
     /*
@@ -68,8 +68,8 @@ contract AcuityAtomicSwapSell {
      */
     function changeOrder(bytes32 oldChainIdAdapterIdAssetIdPrice, bytes32 oldForeignAddress, bytes32 newChainIdAdapterIdAssetIdPrice, bytes32 newForeignAddress) external {
         // Calculate orderIds.
-        bytes32 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress)));
-        bytes32 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress)));
+        bytes16 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress)));
+        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress)));
         // Get order value.
         uint256 value = orderIdValue[oldOrderId];
         // Delete old order.
@@ -77,8 +77,8 @@ contract AcuityAtomicSwapSell {
         // Transfer value.
         orderIdValue[newOrderId] += value;
         // Log info.
-        emit RemoveFromOrder(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress, value);
-        emit AddToOrder(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress, value);
+        emit RemoveFromOrder(oldOrderId, value);
+        emit AddToOrder(newOrderId, msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress, value);
     }
 
     /*
@@ -94,7 +94,7 @@ contract AcuityAtomicSwapSell {
         // Return the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit RemoveFromOrder(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress, value);
+        emit RemoveFromOrder(orderId, value);
     }
 
     /*
@@ -110,7 +110,7 @@ contract AcuityAtomicSwapSell {
         // Return the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit RemoveFromOrder(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress, value);
+        emit RemoveFromOrder(orderId, value);
     }
 
     /*
