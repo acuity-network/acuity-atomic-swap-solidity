@@ -25,7 +25,7 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event UnlockSell(bytes16 orderId, bytes32 secret, address buyer);
+    event UnlockSell(bytes16 orderId, bytes32 secret);
 
     /**
      * @dev
@@ -133,21 +133,21 @@ contract AcuityAtomicSwapSell {
     }
 
     /*
-     * Called by anyone.
+     * Called by buyer.
      */
-    function unlockSell(bytes16 orderId, bytes32 secret, address buyer, uint256 timeout) external {
+    function unlockSell(bytes16 orderId, bytes32 secret, uint256 timeout) external {
         // Check sell lock has not timed out.
         require (timeout > block.timestamp, "Lock timed out.");
         // Calculate sellLockId.
-        bytes32 sellLockId = keccak256(abi.encodePacked(orderId, keccak256(abi.encodePacked(secret)), buyer, timeout));
+        bytes32 sellLockId = keccak256(abi.encodePacked(orderId, keccak256(abi.encodePacked(secret)), msg.sender, timeout));
         // Get lock value;
         uint256 value = sellLockIdValue[sellLockId];
         // Delete lock.
         delete sellLockIdValue[sellLockId];
         // Send the funds.
-        payable(buyer).transfer(value);
+        payable(msg.sender).transfer(value);
         // Log info.
-        emit UnlockSell(orderId, secret, msg.sender);
+        emit UnlockSell(orderId, secret);
     }
 
     /*

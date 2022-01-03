@@ -13,7 +13,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event UnlockBuy(address buyer, bytes32 secret, address seller);
+    event UnlockBuy(address buyer, bytes32 secret);
 
     /**
      * @dev
@@ -46,7 +46,7 @@ contract AcuityAtomicSwapBuy {
         // Send the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit UnlockBuy(buyer, secret, msg.sender);
+        emit UnlockBuy(buyer, secret);
     }
 
     /*
