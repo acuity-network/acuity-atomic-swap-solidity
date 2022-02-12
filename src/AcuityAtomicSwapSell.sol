@@ -3,6 +3,8 @@ pragma solidity ^0.8.11;
 
 contract AcuityAtomicSwapSell {
 
+    mapping (address => bytes32) addressAcuAddress;
+
     mapping (bytes32 => uint256) orderIdValue;
 
     mapping (bytes32 => uint256) sellLockIdValue;
@@ -31,6 +33,10 @@ contract AcuityAtomicSwapSell {
      * @dev
      */
     event TimeoutSell(bytes16 orderId, bytes32 hashedSecret);
+
+    function setAcuAddress(bytes32 acuAddress) external {
+        addressAcuAddress[msg.sender] = acuAddress;
+    }
 
     /*
      * Called by seller.
@@ -163,6 +169,10 @@ contract AcuityAtomicSwapSell {
         delete sellLockIdValue[sellLockId];
         // Log info.
         emit TimeoutSell(orderId, hashedSecret);
+    }
+
+    function getAcuAddress(address seller) view external returns (bytes32 acuAddress) {
+        acuAddress = addressAcuAddress[seller];
     }
 
     function getOrderValue(address seller, bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress) view external returns (uint256 value) {
