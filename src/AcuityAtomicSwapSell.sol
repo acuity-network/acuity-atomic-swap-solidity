@@ -3,11 +3,25 @@ pragma solidity ^0.8.12;
 
 contract AcuityAtomicSwapSell {
 
+    /**
+     * @dev Mapping of selling address to ACU address.
+     */
     mapping (address => bytes32) addressAcuAddress;
 
-    mapping (bytes32 => uint256) orderIdValue;
+    /**
+     * @dev Mapping of assetId (to buy) to linked list of accounts, starting with the largest.
+     */
+    mapping (bytes16 => mapping (address => address)) chainIdAdapterIdAssetIdAccountsLL;
 
-    mapping (bytes32 => uint256) sellLockIdValue;
+    /**
+     * @dev Mapping of assetId (to buy) to selling address to value.
+     */
+    mapping (bytes16 => mapping(address => uint)) chainIdAdapterIdAssetIdAccountValue;
+
+    /**
+     * @dev
+     */
+    mapping (bytes32 => uint256) lockIdValue;
 
     /**
      * @dev
@@ -34,161 +48,169 @@ contract AcuityAtomicSwapSell {
      */
     event TimeoutSell(bytes16 orderId, bytes32 hashedSecret);
 
+    /**
+     * @dev
+     */
     function setAcuAddress(bytes32 acuAddress) external {
         addressAcuAddress[msg.sender] = acuAddress;
     }
 
-    /*
-     * Called by seller.
-     * @param chainIdAdapterIdAssetIdPrice 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId, 16 bytes integer unit price denominated in smallest unit of foreign asset.
-     * @param foreignAddress Address on the destination asset.
-     */
-    function addToOrder(bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress) payable external {
-        // Calculate orderId.
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress)));
-        // Add value to order.
-        orderIdValue[orderId] += msg.value;
-        // Log info.
-        emit AddToOrder(orderId, msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress, msg.value);
+    function addDeposit(bytes16 chainIdAdapterIdAssetId, uint value) internal {
+        mapping (address => address) storage accountsLL = chainIdAdapterIdAssetIdAccountsLL[chainIdAdapterIdAssetId];
+        mapping (address => uint) storage accountValue = chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId];
+        // Get total.
+        uint total = accountValue[msg.sender] + value;
+        // Search for new previous.
+        address prev = address(0);
+        while (accountValue[accountsLL[prev]] > total) {
+            prev = accountsLL[prev];
+        }
+        bool replace = false;
+        // Is sender already in the list?
+        if (accountValue[msg.sender] > 0) {
+            // Search for old previous.
+            address oldPrev = address(0);
+            while (accountsLL[prev] != msg.sender) {
+                prev = accountsLL[prev];
+            }
+            // Is it in the same position?
+            if (prev == oldPrev) {
+                replace = true;
+            }
+            else {
+                // Remove sender from current position.
+                accountsLL[oldPrev] = accountsLL[msg.sender];
+            }
+        }
+        if (!replace) {
+            // Insert into linked list.
+            accountsLL[msg.sender] = accountsLL[prev];
+            accountsLL[prev] = msg.sender;
+        }
+        // Update the value deposited.
+        accountValue[msg.sender] = total;
     }
 
-    /*
-     * Called by seller.
+    function removeDeposit(bytes16 chainIdAdapterIdAssetId, uint value) internal {
+        mapping (address => address) storage accountsLL = chainIdAdapterIdAssetIdAccountsLL[chainIdAdapterIdAssetId];
+        mapping (address => uint) storage accountValue = chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId];
+        // Get total.
+        uint total = accountValue[msg.sender] - value;
+        // Search for new previous.
+        address prev = address(0);
+        while (accountValue[accountsLL[prev]] > total) {
+            prev = accountsLL[prev];
+        }
+        bool replace = false;
+        // Search for old previous.
+        address oldPrev = address(0);
+        while (accountsLL[prev] != msg.sender) {
+            prev = accountsLL[prev];
+        }
+        // Is it in a different position?
+        if (prev != oldPrev) {
+            // Remove sender from current position.
+            accountsLL[oldPrev] = accountsLL[msg.sender];
+            // Insert into linked list.
+            accountsLL[msg.sender] = accountsLL[prev];
+            accountsLL[prev] = msg.sender;
+        }
+        // Update the value deposited.
+        accountValue[msg.sender] = total;
+    }
+
+    /**
+     * @dev Deposit funds to be sold for a specific asset.
+     * @param chainIdAdapterIdAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
      */
-    function changeOrder(bytes32 oldChainIdAdapterIdAssetIdPrice, bytes32 oldForeignAddress, bytes32 newChainIdAdapterIdAssetIdPrice, bytes32 newForeignAddress, uint256 value) external {
-        // Calculate orderIds.
-        bytes16 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress)));
-        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress)));
+    function deposit(bytes16 chainIdAdapterIdAssetId) external payable {
+        addDeposit(chainIdAdapterIdAssetId, msg.value);
+    }
+
+    /**
+     * @dev Create a sell lock. Called by seller.
+     * @param chainIdAdapterIdAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
+     */
+    function lockSell(bytes16 chainIdAdapterIdAssetId, bytes32 hashedSecret, address buyer, uint256 timeout, uint256 value) external {
         // Check there is enough.
-        require (orderIdValue[oldOrderId] >= value, "Sell order not big enough.");
-        // Transfer value.
-        orderIdValue[oldOrderId] -= value;
-        orderIdValue[newOrderId] += value;
-        // Log info.
-        emit RemoveFromOrder(oldOrderId, value);
-        emit AddToOrder(newOrderId, msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress, value);
-    }
-
-    /*
-     * Called by seller.
-     */
-    function changeOrder(bytes32 oldChainIdAdapterIdAssetIdPrice, bytes32 oldForeignAddress, bytes32 newChainIdAdapterIdAssetIdPrice, bytes32 newForeignAddress) external {
-        // Calculate orderIds.
-        bytes16 oldOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, oldChainIdAdapterIdAssetIdPrice, oldForeignAddress)));
-        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress)));
-        // Get order value.
-        uint256 value = orderIdValue[oldOrderId];
-        // Delete old order.
-        delete orderIdValue[oldOrderId];
-        // Transfer value.
-        orderIdValue[newOrderId] += value;
-        // Log info.
-        emit RemoveFromOrder(oldOrderId, value);
-        emit AddToOrder(newOrderId, msg.sender, newChainIdAdapterIdAssetIdPrice, newForeignAddress, value);
-    }
-
-    /*
-     * Called by seller.
-     */
-    function removeFromOrder(bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress, uint256 value) external {
-        // Calculate orderId.
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress)));
-        // Check there is enough.
-        require (orderIdValue[orderId] >= value, "Sell order not big enough.");
-        // Remove value from order.
-        orderIdValue[orderId] -= value;
-        // Return the funds.
-        payable(msg.sender).transfer(value);
-        // Log info.
-        emit RemoveFromOrder(orderId, value);
-    }
-
-    /*
-     * Called by seller.
-     */
-    function removeFromOrder(bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress) external {
-        // Calculate orderId.
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress)));
-        // Get order value.
-        uint256 value = orderIdValue[orderId];
-        // Delete order.
-        delete orderIdValue[orderId];
-        // Return the funds.
-        payable(msg.sender).transfer(value);
-        // Log info.
-        emit RemoveFromOrder(orderId, value);
-    }
-
-    /*
-     * Called by seller.
-     */
-    function lockSell(bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress, bytes32 hashedSecret, address buyer, uint256 timeout, uint256 value) external {
-        // Calculate orderId.
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(msg.sender, chainIdAdapterIdAssetIdPrice, foreignAddress)));
-        // Check there is enough.
-        require (orderIdValue[orderId] >= value, "Sell order not big enough.");
-        // Calculate sellLockId.
-        bytes32 sellLockId = keccak256(abi.encodePacked(orderId, hashedSecret, buyer, timeout));
-        // Ensure sellLockId is not already in use.
-        require (sellLockIdValue[sellLockId] == 0, "Sell lock already exists.");
+        require (chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId][msg.sender] >= value, "Sell order not big enough.");
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, hashedSecret, buyer, timeout));
+        // Ensure lockId is not already in use.
+        require (lockIdValue[lockId] == 0, "Sell lock already exists.");
         // Move value into sell lock.
-        orderIdValue[orderId] -= value;
-        sellLockIdValue[sellLockId] = value;
+        removeDeposit(chainIdAdapterIdAssetId, value);
+        lockIdValue[lockId] = value;
         // Log info.
-        emit LockSell(orderId, hashedSecret, timeout, value);
+//        emit LockSell(orderId, hashedSecret, timeout, value);
     }
 
-    /*
+    /**
      * Called by buyer.
      */
-    function unlockSell(bytes16 orderId, bytes32 secret, uint256 timeout) external {
+    function unlockSell(address seller, bytes32 secret, uint256 timeout) external {
         // Check sell lock has not timed out.
         require (timeout > block.timestamp, "Lock timed out.");
-        // Calculate sellLockId.
-        bytes32 sellLockId = keccak256(abi.encodePacked(orderId, keccak256(abi.encodePacked(secret)), msg.sender, timeout));
-        // Get lock value;
-        uint256 value = sellLockIdValue[sellLockId];
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encodePacked(seller, keccak256(abi.encodePacked(secret)), msg.sender, timeout));
+        // Get lock value.
+        uint256 value = lockIdValue[lockId];
         // Delete lock.
-        delete sellLockIdValue[sellLockId];
+        delete lockIdValue[lockId];
         // Send the funds.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit UnlockSell(orderId, secret);
+//        emit UnlockSell(orderId, secret);
     }
 
-    /*
+    /**
      * Called by seller if buyer did not reveal secret.
      */
-    function timeoutSell(bytes16 orderId, bytes32 hashedSecret, address buyer, uint256 timeout) external {
+    function timeoutSell(bytes16 chainIdAdapterIdAssetId, bytes32 hashedSecret, address buyer, uint256 timeout) external {
         // Check lock has timed out.
         require (timeout <= block.timestamp, "Lock not timed out.");
-        // Calculate sellLockId.
-        bytes32 sellLockId = keccak256(abi.encodePacked(orderId, hashedSecret, buyer, timeout));
-        // Return funds to sell order and delete lock.
-        orderIdValue[orderId] += sellLockIdValue[sellLockId];
-        delete sellLockIdValue[sellLockId];
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, hashedSecret, buyer, timeout));
+        // Return funds and delete lock.
+        addDeposit(chainIdAdapterIdAssetId, lockIdValue[lockId]);
+        delete lockIdValue[lockId];
         // Log info.
-        emit TimeoutSell(orderId, hashedSecret);
+//        emit TimeoutSell(orderId, hashedSecret);
     }
 
+    /**
+     * @dev
+     */
     function getAcuAddress(address seller) view external returns (bytes32 acuAddress) {
         acuAddress = addressAcuAddress[seller];
     }
 
+    /**
+     * @dev
+     */
     function getOrderValue(address seller, bytes32 chainIdAdapterIdAssetIdPrice, bytes32 foreignAddress) view external returns (uint256 value) {
-        value = orderIdValue[bytes16(keccak256(abi.encodePacked(seller, chainIdAdapterIdAssetIdPrice, foreignAddress)))];
+//        value = orderIdValue[bytes16(keccak256(abi.encodePacked(seller, chainIdAdapterIdAssetIdPrice, foreignAddress)))];
     }
 
+    /**
+     * @dev
+     */
     function getOrderValue(bytes16 orderId) view external returns (uint256 value) {
-        value = orderIdValue[orderId];
+//        value = orderIdValue[orderId];
     }
 
+    /**
+     * @dev
+     */
     function getSellLock(bytes16 orderId, bytes32 hashedSecret, address buyer, uint256 timeout) view external returns (uint256 value) {
-        value = sellLockIdValue[keccak256(abi.encodePacked(orderId, hashedSecret, buyer, timeout))];
+//        value = lockIdValue[keccak256(abi.encodePacked(orderId, hashedSecret, buyer, timeout))];
     }
 
-    function getSellLock(bytes32 sellLockId) view external returns (uint256 value) {
-        value = sellLockIdValue[sellLockId];
+    /**
+     * @dev
+     */
+    function getSellLock(bytes32 lockId) view external returns (uint256 value) {
+//        value = lockIdValue[lockId];
     }
 
 }

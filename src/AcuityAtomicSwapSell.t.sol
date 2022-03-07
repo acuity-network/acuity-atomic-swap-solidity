@@ -18,7 +18,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         acuityAtomicSwapSell.setAcuAddress(hex"1234");
         assertEq(acuityAtomicSwapSell.getAcuAddress(address(this)), hex"1234");
     }
-
+/*
     function testAddToOrder() public {
         uint256 value = 50;
         bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, bytes32(hex"1234"), bytes32(hex"1234"))));
@@ -228,5 +228,6 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(address(acuityAtomicSwapSell).balance, 50);
         assertEq(acuityAtomicSwapSell.getOrderValue(orderId), 50);
     }
+*/
 
 }
