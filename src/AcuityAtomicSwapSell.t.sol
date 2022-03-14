@@ -5,118 +5,247 @@ import "ds-test/test.sol";
 
 import "./AcuityAtomicSwapSell.sol";
 
+contract AccountProxy {
+
+    AcuityAtomicSwapSell acuityAtomicSwapSell;
+
+    constructor (AcuityAtomicSwapSell _acuityAtomicSwapSell) {
+        acuityAtomicSwapSell = _acuityAtomicSwapSell;
+    }
+
+    receive() payable external {
+    }
+
+    function deposit(bytes16 chainIdAdapterIdAssetId) payable external {
+        acuityAtomicSwapSell.deposit{value: msg.value}(chainIdAdapterIdAssetId);
+    }
+
+    function withdraw(bytes16 chainIdAdapterIdAssetId, uint value) external {
+        acuityAtomicSwapSell.withdraw(chainIdAdapterIdAssetId, value);
+    }
+}
+
 contract AcuityAtomicSwapSellTest is DSTest {
     AcuityAtomicSwapSell acuityAtomicSwapSell;
+    AccountProxy account0;
+    AccountProxy account1;
+    AccountProxy account2;
+    AccountProxy account3;
 
     receive() external payable {}
 
     function setUp() public {
         acuityAtomicSwapSell = new AcuityAtomicSwapSell();
+        account0 = new AccountProxy(acuityAtomicSwapSell);
+        account1 = new AccountProxy(acuityAtomicSwapSell);
+        account2 = new AccountProxy(acuityAtomicSwapSell);
+        account3 = new AccountProxy(acuityAtomicSwapSell);
     }
 
     function testSetAcuAddress() public {
         acuityAtomicSwapSell.setAcuAddress(hex"1234");
         assertEq(acuityAtomicSwapSell.getAcuAddress(address(this)), hex"1234");
     }
+
+    function testDeposit() public {
+        (address[] memory accounts, uint[] memory values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 0);
+        assertEq(values.length, 0);
+
+        account0.deposit{value: 50}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account0));
+        assertEq(values[0], 50);
+
+        account1.deposit{value: 40}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account0));
+        assertEq(values[0], 50);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        account2.deposit{value: 60}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 3);
+        assertEq(values.length, 3);
+        assertEq(accounts[0], address(account2));
+        assertEq(values[0], 60);
+        assertEq(accounts[1], address(account0));
+        assertEq(values[1], 50);
+        assertEq(accounts[2], address(account1));
+        assertEq(values[2], 40);
+
+        account3.deposit{value: 45}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 4);
+        assertEq(values.length, 4);
+        assertEq(accounts[0], address(account2));
+        assertEq(values[0], 60);
+        assertEq(accounts[1], address(account0));
+        assertEq(values[1], 50);
+        assertEq(accounts[2], address(account3));
+        assertEq(values[2], 45);
+        assertEq(accounts[3], address(account1));
+        assertEq(values[3], 40);
+
+        account0.deposit{value: 10}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 4);
+        assertEq(values.length, 4);
+        assertEq(accounts[0], address(account2));
+        assertEq(values[0], 60);
+        assertEq(accounts[1], address(account0));
+        assertEq(values[1], 60);
+        assertEq(accounts[2], address(account3));
+        assertEq(values[2], 45);
+        assertEq(accounts[3], address(account1));
+        assertEq(values[3], 40);
+
+        account0.deposit{value: 1}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 4);
+        assertEq(values.length, 4);
+        assertEq(accounts[0], address(account0));
+        assertEq(values[0], 61);
+        assertEq(accounts[1], address(account2));
+        assertEq(values[1], 60);
+        assertEq(accounts[2], address(account3));
+        assertEq(values[2], 45);
+        assertEq(accounts[3], address(account1));
+        assertEq(values[3], 40);
+    }
+
+    function testControlWithdrawNotEnough() public {
+        account0.deposit{value: 50}(hex"1234");
+        account0.withdraw(hex"1234", 50);
+    }
+
+    function testFailWithdrawNotEnough() public {
+        account0.deposit{value: 50}(hex"1234");
+        account0.withdraw(hex"1234", 51);
+    }
+
+    function testWithdraw() public {
+        (address[] memory accounts, uint[] memory values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 0);
+        assertEq(values.length, 0);
+
+        account0.deposit{value: 50}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account0));
+        assertEq(values[0], 50);
+
+        account1.deposit{value: 40}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account0));
+        assertEq(values[0], 50);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        account2.deposit{value: 60}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 3);
+        assertEq(values.length, 3);
+        assertEq(accounts[0], address(account2));
+        assertEq(values[0], 60);
+        assertEq(accounts[1], address(account0));
+        assertEq(values[1], 50);
+        assertEq(accounts[2], address(account1));
+        assertEq(values[2], 40);
+
+        account3.deposit{value: 45}(hex"1234");
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 4);
+        assertEq(values.length, 4);
+        assertEq(accounts[0], address(account2));
+        assertEq(values[0], 60);
+        assertEq(accounts[1], address(account0));
+        assertEq(values[1], 50);
+        assertEq(accounts[2], address(account3));
+        assertEq(values[2], 45);
+        assertEq(accounts[3], address(account1));
+        assertEq(values[3], 40);
+
+        uint256 startBalance = address(account2).balance;
+        account2.withdraw(hex"1234", 40);
+        assertEq(startBalance + 40, address(account2).balance);
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 4);
+        assertEq(values.length, 4);
+        assertEq(accounts[0], address(account0));
+        assertEq(values[0], 50);
+        assertEq(accounts[1], address(account3));
+        assertEq(values[1], 45);
+        assertEq(accounts[2], address(account1));
+        assertEq(values[2], 40);
+        assertEq(accounts[3], address(account2));
+        assertEq(values[3], 20);
+
+        startBalance = address(account0).balance;
+        account0.withdraw(hex"1234", 5);
+        assertEq(startBalance + 5, address(account0).balance);
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 4);
+        assertEq(values.length, 4);
+        assertEq(accounts[0], address(account3));
+        assertEq(values[0], 45);
+        assertEq(accounts[1], address(account0));
+        assertEq(values[1], 45);
+        assertEq(accounts[2], address(account1));
+        assertEq(values[2], 40);
+        assertEq(accounts[3], address(account2));
+        assertEq(values[3], 20);
+
+        startBalance = address(account2).balance;
+        account2.withdraw(hex"1234", 20);
+        assertEq(startBalance + 20, address(account2).balance);
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 3);
+        assertEq(values.length, 3);
+        assertEq(accounts[0], address(account3));
+        assertEq(values[0], 45);
+        assertEq(accounts[1], address(account0));
+        assertEq(values[1], 45);
+        assertEq(accounts[2], address(account1));
+        assertEq(values[2], 40);
+
+        startBalance = address(account3).balance;
+        account3.withdraw(hex"1234", 45);
+        assertEq(startBalance + 45, address(account3).balance);
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account0));
+        assertEq(values[0], 45);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        startBalance = address(account0).balance;
+        account0.withdraw(hex"1234", 45);
+        assertEq(startBalance + 45, address(account0).balance);
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account1));
+        assertEq(values[0], 40);
+
+        startBalance = address(account1).balance;
+        account1.withdraw(hex"1234", 40);
+        assertEq(startBalance + 40, address(account1).balance);
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
+        assertEq(accounts.length, 0);
+        assertEq(values.length, 0);
+    }
+
 /*
-    function testAddToOrder() public {
-        uint256 value = 50;
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, bytes32(hex"1234"), bytes32(hex"1234"))));
-        acuityAtomicSwapSell.addToOrder{value: value}(hex"1234", hex"1234");
-        assertEq(address(acuityAtomicSwapSell).balance, value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"1234", hex"1234"), value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
-    }
-
-    function testControlChangeOrderNotBigEnough() public {
-        uint256 value = 50;
-        acuityAtomicSwapSell.addToOrder{value: value}(hex"1234", hex"1234");
-        acuityAtomicSwapSell.changeOrder(hex"1234", hex"1234", hex"5678", hex"1234", value);
-    }
-
-    function testFailChangeOrderNotBigEnough() public {
-        uint256 value = 50;
-        acuityAtomicSwapSell.addToOrder{value: value}(hex"1234", hex"1234");
-        acuityAtomicSwapSell.changeOrder(hex"1234", hex"1234", hex"5678", hex"1234", value + 1);
-    }
-
-    function testChangeOrder() public {
-        uint256 value = 50;
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, bytes32(hex"1234"), bytes32(hex"1234"))));
-        acuityAtomicSwapSell.addToOrder{value: value}(hex"1234", hex"1234");
-        assertEq(address(acuityAtomicSwapSell).balance, value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"1234", hex"1234"), value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
-        uint256 startBalance = address(this).balance;
-        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(this, bytes32(hex"5678"), bytes32(hex"1234"))));
-        acuityAtomicSwapSell.changeOrder(hex"1234", hex"1234", hex"5678", hex"1234", 10);
-        assertEq(address(this).balance, startBalance);
-        assertEq(address(acuityAtomicSwapSell).balance, value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"1234", hex"1234"), value - 10);
-        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value - 10);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"5678", hex"1234"), 10);
-        assertEq(acuityAtomicSwapSell.getOrderValue(newOrderId), 10);
-    }
-
-    function testChangeOrderNoValue() public {
-        uint256 value = 50;
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, bytes32(hex"1234"), bytes32(hex"1234"))));
-        acuityAtomicSwapSell.addToOrder{value: value}(hex"1234", hex"1234");
-        assertEq(address(acuityAtomicSwapSell).balance, value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"1234", hex"1234"), value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
-        uint256 startBalance = address(this).balance;
-        bytes16 newOrderId = bytes16(keccak256(abi.encodePacked(this, bytes32(hex"5678"), bytes32(hex"1234"))));
-        acuityAtomicSwapSell.changeOrder(hex"1234", hex"1234", hex"5678", hex"1234");
-        assertEq(address(this).balance, startBalance);
-        assertEq(address(acuityAtomicSwapSell).balance, value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"1234", hex"1234"), 0);
-        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), 0);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"5678", hex"1234"), value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(newOrderId), value);
-    }
-
-    function testControlRemoveFromOrderNotBigEnough() public {
-        uint256 value = 50;
-        acuityAtomicSwapSell.addToOrder{value: value}(hex"1234", hex"1234");
-        acuityAtomicSwapSell.removeFromOrder(hex"1234", hex"1234", value);
-    }
-
-    function testFailRemoveFromOrderNotBigEnough() public {
-        uint256 value = 50;
-        acuityAtomicSwapSell.addToOrder{value: value}(hex"1234", hex"1234");
-        acuityAtomicSwapSell.removeFromOrder(hex"1234", hex"1234", value + 1);
-    }
-
-    function testRemoveFromOrder() public {
-        uint256 value = 50;
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, bytes32(hex"1234"), bytes32(hex"1234"))));
-        acuityAtomicSwapSell.addToOrder{value: value}(hex"1234", hex"1234");
-        assertEq(address(acuityAtomicSwapSell).balance, value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"1234", hex"1234"), value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
-        uint256 startBalance = address(this).balance;
-        acuityAtomicSwapSell.removeFromOrder(hex"1234", hex"1234", 10);
-        assertEq(address(this).balance, startBalance + 10);
-        assertEq(address(acuityAtomicSwapSell).balance, value - 10);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"1234", hex"1234"), value - 10);
-        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value - 10);
-    }
-
-    function testRemoveFromOrderNoValue() public {
-        uint256 value = 50;
-        bytes16 orderId = bytes16(keccak256(abi.encodePacked(this, bytes32(hex"1234"), bytes32(hex"1234"))));
-        acuityAtomicSwapSell.addToOrder{value: value}(hex"1234", hex"1234");
-        assertEq(address(acuityAtomicSwapSell).balance, value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"1234", hex"1234"), value);
-        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), value);
-        uint256 startBalance = address(this).balance;
-        acuityAtomicSwapSell.removeFromOrder(hex"1234", hex"1234");
-        assertEq(address(this).balance, startBalance + value);
-        assertEq(address(acuityAtomicSwapSell).balance, 0);
-        assertEq(acuityAtomicSwapSell.getOrderValue(address(this), hex"1234", hex"1234"), 0);
-        assertEq(acuityAtomicSwapSell.getOrderValue(orderId), 0);
-    }
 
     function testControlLockSellNotBigEnough() public {
         uint256 value = 50;
