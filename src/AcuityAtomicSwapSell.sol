@@ -111,25 +111,18 @@ contract AcuityAtomicSwapSell {
         while (accountsLL[oldPrev] != msg.sender) {
             oldPrev = accountsLL[oldPrev];
         }
-        // Is the deposit removed completely?
-        if (total == 0) {
-            // Remove sender from current position.
-            accountsLL[oldPrev] = accountsLL[msg.sender];
-        }
-        else {
+        // Remove sender from current position.
+        accountsLL[oldPrev] = accountsLL[msg.sender];
+        // Is it in a different position?
+        if (total > 0) {
             // Search for new previous.
             address prev = address(0);
             while (accountValue[accountsLL[prev]] >= total) {
                 prev = accountsLL[prev];
             }
-            // Is it in a different position?
-            if (prev != oldPrev) {
-                // Remove sender from current position.
-                accountsLL[oldPrev] = accountsLL[msg.sender];
-                // Insert into linked list.
-                accountsLL[msg.sender] = accountsLL[prev];
-                accountsLL[prev] = msg.sender;
-            }
+            // Insert into linked list.
+            accountsLL[msg.sender] = accountsLL[prev];
+            accountsLL[prev] = msg.sender;
         }
         // Update the value deposited.
         accountValue[msg.sender] = total;
@@ -200,6 +193,9 @@ contract AcuityAtomicSwapSell {
         require(timeout <= block.timestamp, "Lock not timed out.");
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, hashedSecret, buyer, timeout));
+
+        require(lockIdValue[lockId] > 0, "Lock does not exist.");
+
         // Return funds and delete lock.
         addDeposit(chainIdAdapterIdAssetId, lockIdValue[lockId]);
         delete lockIdValue[lockId];
@@ -244,29 +240,25 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    function getOrderValue(address seller, bytes32 chainIdAdapterIdAssetId, bytes32 foreignAddress) view external returns (uint256 value) {
-//        value = orderIdValue[bytes16(keccak256(abi.encodePacked(seller, chainIdAdapterIdAssetId, foreignAddress)))];
+    function getDepositValue(bytes16 chainIdAdapterIdAssetId, address seller) view external returns (uint256 value) {
+        value = chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId][seller];
+    }
+
+
+    /**
+     * @dev
+     */
+    function getLockValue(address seller, bytes32 hashedSecret, address buyer, uint256 timeout) view external returns (uint256 value) {
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encodePacked(seller, hashedSecret, buyer, timeout));
+        value = lockIdValue[lockId];
     }
 
     /**
      * @dev
      */
-    function getOrderValue(bytes16 orderId) view external returns (uint256 value) {
-//        value = orderIdValue[orderId];
-    }
-
-    /**
-     * @dev
-     */
-    function getSellLock(bytes16 orderId, bytes32 hashedSecret, address buyer, uint256 timeout) view external returns (uint256 value) {
-//        value = lockIdValue[keccak256(abi.encodePacked(orderId, hashedSecret, buyer, timeout))];
-    }
-
-    /**
-     * @dev
-     */
-    function getSellLock(bytes32 lockId) view external returns (uint256 value) {
-//        value = lockIdValue[lockId];
+    function getLockValue(bytes32 lockId) view external returns (uint256 value) {
+        value = lockIdValue[lockId];
     }
 
 }
