@@ -36,6 +36,6 @@ contract AcuityAtomicSwapTest is DSTest {
         uint256 timeout = block.timestamp + 1000;
         acuityAtomicSwap.sellerLockValue{value: 10}(to, hashedSecret, timeout);
         assertEq(address(acuityAtomicSwap).balance, 10);
-        assertEq(acuityAtomicSwap.getLock(address(this), to, hashedSecret, timeout), 10);
+        assertEq(acuityAtomicSwap.getLockValue(address(this), to, hashedSecret, timeout), 10);
     }
 }
