@@ -48,6 +48,26 @@ contract AcuityAtomicSwap {
     /**
      * @dev
      */
+    error ZeroValue();
+
+    /**
+     * @dev
+     */
+    error LockAlreadyExists(bytes32 lockId);
+
+    /**
+     * @dev
+     */
+    error LockNotTimedOut();
+
+    /**
+     * @dev
+     */
+    error TokenTransferFailed();
+
+    /**
+     * @dev
+     */
     function setAcuAddress(bytes32 acuAddress) external {
         addressAcuAddress[msg.sender] = acuAddress;
     }
@@ -56,12 +76,12 @@ contract AcuityAtomicSwap {
      * @dev Called by buyer.
      */
     function buyerLockValue(address seller, bytes32 hashedSecret, uint256 timeout, bytes32 assetIdPrice) payable external {
-        // Ensure lock has value.
-        require(msg.value != 0, "Lock must have value.");
+        // Ensure value is nonzero.
+        if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, seller, hashedSecret, timeout));
         // Ensure lockId is not already in use.
-        require(lockIdValue[lockId] == 0, "Lock already exists.");
+        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Store lock value.
         lockIdValue[lockId] = msg.value;
         // Log info.
@@ -72,12 +92,12 @@ contract AcuityAtomicSwap {
      * @dev Called by seller.
      */
     function sellerLockValue(address buyer, bytes32 hashedSecret, uint256 timeout) payable external {
-        // Ensure lock has value.
-        require(msg.value != 0, "Lock must have value.");
+        // Ensure value is nonzero.
+        if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, buyer, hashedSecret, timeout));
         // Ensure lockId is not already in use.
-        require(lockIdValue[lockId] == 0, "Lock already exists.");
+        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Store lock value.
         lockIdValue[lockId] = msg.value;
         // Log info.
@@ -105,7 +125,7 @@ contract AcuityAtomicSwap {
      */
     function timeoutValue(address to, bytes32 hashedSecret, uint256 timeout) external {
         // Check lock has timed out.
-        require(timeout <= block.timestamp, "Lock not timed out.");
+        if (timeout > block.timestamp) revert LockNotTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
         // Get lock value;
@@ -119,19 +139,35 @@ contract AcuityAtomicSwap {
     }
 
     /**
+     * @dev
+     */
+    function safeTransfer(address token, address to, uint value) internal {
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20.transfer.selector, to, value));
+        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed();
+    }
+
+    /**
+     * @dev
+     */
+    function safeTransferFrom(address token, address from, address to, uint value) internal {
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20.transferFrom.selector, from, to, value));
+        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed();
+    }
+
+    /**
      * @dev Called by buyer.
      */
     function buyerLockERC20Value(address seller, bytes32 hashedSecret, uint256 timeout, address tokenAddress, uint256 value, bytes32 assetIdPrice) external {
-        // Ensure lock has value.
-        require(value != 0, "Lock must have value.");
+        // Ensure value is nonzero.
+        if (value == 0) revert ZeroValue();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, seller, hashedSecret, timeout, tokenAddress));
         // Ensure lockId is not already in use.
-        require(lockIdValue[lockId] == 0, "Lock already exists.");
+        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Store lock value.
         lockIdValue[lockId] = value;
         // Transfer the value.
-        require(ERC20(tokenAddress).transferFrom(msg.sender, address(this), value), "Token transfer failed.");
+        safeTransferFrom(tokenAddress, msg.sender, address(this), value);
         // Log info.
         emit BuyerLockERC20(msg.sender, seller, hashedSecret, timeout, tokenAddress, value, assetIdPrice);
     }
@@ -140,16 +176,16 @@ contract AcuityAtomicSwap {
      * @dev Called by seller.
      */
     function sellerLockERC20Value(address buyer, bytes32 hashedSecret, uint256 timeout, address tokenAddress, uint256 value) external {
-        // Ensure lock has value.
-        require(value != 0, "Lock must have value.");
+        // Ensure value is nonzero.
+        if (value == 0) revert ZeroValue();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, buyer, hashedSecret, timeout, tokenAddress));
         // Ensure lockId is not already in use.
-        require(lockIdValue[lockId] == 0, "Lock already exists.");
+        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Store lock value.
         lockIdValue[lockId] = value;
         // Transfer the value.
-        require(ERC20(tokenAddress).transferFrom(msg.sender, address(this), value), "Token transfer failed.");
+        safeTransferFrom(tokenAddress, msg.sender, address(this), value);
         // Log info.
         emit SellerLockERC20(msg.sender, buyer, hashedSecret, timeout, tokenAddress, value);
     }
@@ -165,7 +201,7 @@ contract AcuityAtomicSwap {
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
-        require(ERC20(tokenAddress).transferFrom(address(this), msg.sender, value), "Token transfer failed.");
+        safeTransfer(tokenAddress, msg.sender, value);
         // Log info.
         emit Unlock(lockId, secret);
     }
@@ -175,7 +211,7 @@ contract AcuityAtomicSwap {
      */
     function timeoutERC20Value(address to, bytes32 hashedSecret, uint256 timeout, address tokenAddress) external {
         // Check lock has timed out.
-        require(timeout <= block.timestamp, "Lock not timed out.");
+        if (timeout > block.timestamp) revert LockNotTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout, tokenAddress));
         // Get lock value;
@@ -183,7 +219,7 @@ contract AcuityAtomicSwap {
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
-        require(ERC20(tokenAddress).transferFrom(address(this), msg.sender, value), "Token transfer failed.");
+        safeTransfer(tokenAddress, msg.sender, value);
         // Log info.
         emit Timeout(lockId);
     }
