@@ -29,15 +29,30 @@ contract AcuityAtomicSwapBuy {
     event TimeoutBuy(bytes32 lockId);
 
     /**
+     * @dev
+     */
+    error ZeroValue();
+
+    /**
+     * @dev
+     */
+    error LockAlreadyExists(bytes32 lockId);
+
+    /**
+     * @dev
+     */
+    error LockNotTimedOut();
+
+    /**
      * @dev Called by buyer.
      */
     function lockBuy(address seller, bytes32 hashedSecret, uint256 timeout) payable external {
-        // Ensure lock has value.
-        require (msg.value != 0, "Lock must have value.");
+        // Ensure value is nonzero.
+        if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, seller, hashedSecret, timeout));
         // Ensure lockId is not already in use.
-        require (lockIdValue[lockId] == 0, "Buy lock already exists.");
+        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Store lock value.
         lockIdValue[lockId] = msg.value;
         // Get linked list of seller's lockIds.
@@ -96,7 +111,7 @@ contract AcuityAtomicSwapBuy {
      */
     function timeoutBuy(address seller, bytes32 hashedSecret, uint256 timeout) external {
         // Check lock has timed out.
-        require (timeout <= block.timestamp, "Lock not timed out.");
+        if (timeout > block.timestamp) revert LockNotTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, seller, hashedSecret, timeout));
         // Get lock value;

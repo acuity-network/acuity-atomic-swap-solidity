@@ -51,6 +51,31 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
+    error ZeroValue();
+
+    /**
+     * @dev
+     */
+    error DepositNotBigEnough();
+
+    /**
+     * @dev
+     */
+    error LockAlreadyExists(bytes32 lockId);
+
+    /**
+     * @dev
+     */
+    error LockTimedOut();
+
+    /**
+     * @dev
+     */
+    error LockNotTimedOut();
+
+    /**
+     * @dev
+     */
     function setAcuAddress(bytes32 acuAddress) external {
         addressAcuAddress[msg.sender] = acuAddress;
     }
@@ -140,7 +165,7 @@ contract AcuityAtomicSwapSell {
 
     function withdraw(bytes16 chainIdAdapterIdAssetId, uint value) external {
         // Check there is enough.
-        require(chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId][msg.sender] >= value);
+        if (chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId][msg.sender] < value) revert DepositNotBigEnough();
         // Remove the deposit.
         removeDeposit(chainIdAdapterIdAssetId, value);
         // Send the funds back.
@@ -152,14 +177,14 @@ contract AcuityAtomicSwapSell {
      * @param chainIdAdapterIdAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
      */
     function lockSell(bytes16 chainIdAdapterIdAssetId, bytes32 hashedSecret, address buyer, uint256 timeout, uint256 value) external {
-        // Ensure value is not 0.
-        require(value > 0, "Value to lock must be greater than 0.");
+        // Ensure value is nonzero.
+        if (value == 0) revert ZeroValue();
         // Check there is enough.
-        require(chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId][msg.sender] >= value, "Deposit not big enough.");
+        if (chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId][msg.sender] < value) revert DepositNotBigEnough();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, hashedSecret, buyer, timeout));
         // Ensure lockId is not already in use.
-        require(lockIdValue[lockId] == 0, "Sell lock already exists.");
+        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Move value into sell lock.
         removeDeposit(chainIdAdapterIdAssetId, value);
         lockIdValue[lockId] = value;
@@ -172,7 +197,7 @@ contract AcuityAtomicSwapSell {
      */
     function unlockSell(address seller, bytes32 secret, uint256 timeout) external {
         // Check sell lock has not timed out.
-        require(timeout > block.timestamp, "Lock timed out.");
+        if (timeout <= block.timestamp) revert LockTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(seller, keccak256(abi.encodePacked(secret)), msg.sender, timeout));
         // Get lock value.
@@ -190,11 +215,11 @@ contract AcuityAtomicSwapSell {
      */
     function timeoutSell(bytes16 chainIdAdapterIdAssetId, bytes32 hashedSecret, address buyer, uint256 timeout) external {
         // Check lock has timed out.
-        require(timeout <= block.timestamp, "Lock not timed out.");
+        if (timeout > block.timestamp) revert LockNotTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, hashedSecret, buyer, timeout));
 
-        require(lockIdValue[lockId] > 0, "Lock does not exist.");
+//        require(lockIdValue[lockId] > 0, "Lock does not exist.");
 
         // Return funds and delete lock.
         addDeposit(chainIdAdapterIdAssetId, lockIdValue[lockId]);
