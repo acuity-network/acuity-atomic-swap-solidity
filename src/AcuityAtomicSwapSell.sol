@@ -26,12 +26,12 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event AddToOrder(bytes16 orderId, address seller, bytes32 chainIdAdapterIdAssetId, bytes32 foreignAddress, uint256 value);
+    event Deposit(address account, bytes16 chainIdAdapterIdAssetId, uint256 value);
 
     /**
      * @dev
      */
-    event RemoveFromOrder(bytes16 orderId, uint256 value);
+    event Withdraw(address account, bytes16 chainIdAdapterIdAssetId, uint256 value);
 
     /**
      * @dev
@@ -160,6 +160,8 @@ contract AcuityAtomicSwapSell {
     function deposit(bytes16 chainIdAdapterIdAssetId) external payable {
         if (msg.value > 0) {
             addDeposit(chainIdAdapterIdAssetId, msg.value);
+            // Log info.
+            emit Deposit(msg.sender, chainIdAdapterIdAssetId, msg.value);
         }
     }
 
@@ -170,6 +172,8 @@ contract AcuityAtomicSwapSell {
         removeDeposit(chainIdAdapterIdAssetId, value);
         // Send the funds back.
         payable(msg.sender).transfer(value);
+        // Log info.
+        emit Withdraw(msg.sender, chainIdAdapterIdAssetId, value);
     }
 
     /**
