@@ -4,11 +4,6 @@ pragma solidity ^0.8.13;
 contract AcuityAtomicSwapSell {
 
     /**
-     * @dev Mapping of selling address to ACU address.
-     */
-    mapping (address => bytes32) addressAcuAddress;
-
-    /**
      * @dev Mapping of buyAssetId to linked list of accounts, starting with the largest.
      */
     mapping (bytes16 => mapping (address => address)) buyAssetIdAccountsLL;
@@ -72,13 +67,6 @@ contract AcuityAtomicSwapSell {
      * @dev
      */
     error LockNotTimedOut();
-
-    /**
-     * @dev
-     */
-    function setAcuAddress(bytes32 acuAddress) external {
-        addressAcuAddress[msg.sender] = acuAddress;
-    }
 
     /**
      * @dev
@@ -294,13 +282,6 @@ contract AcuityAtomicSwapSell {
         payable(msg.sender).transfer(value);
         // Log info.
 //        emit TimeoutSell(orderId, hashedSecret);
-    }
-
-    /**
-     * @dev
-     */
-    function getAcuAddress(address seller) view external returns (bytes32 acuAddress) {
-        acuAddress = addressAcuAddress[seller];
     }
 
     /**

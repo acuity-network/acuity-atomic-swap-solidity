@@ -46,11 +46,6 @@ contract AcuityAtomicSwapSellTest is DSTest {
         account3 = new AccountProxy(acuityAtomicSwapSell);
     }
 
-    function testSetAcuAddress() public {
-        acuityAtomicSwapSell.setAcuAddress(hex"1234");
-        assertEq(acuityAtomicSwapSell.getAcuAddress(address(this)), hex"1234");
-    }
-
     function testDeposit() public {
         (address[] memory accounts, uint[] memory values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 0);
