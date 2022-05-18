@@ -26,12 +26,12 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event DepositAdd(address account, bytes16 buyAssetId, uint256 value);
+    event StashAdd(address account, bytes16 buyAssetId, uint256 value);
 
     /**
      * @dev
      */
-    event DepositRemove(address account, bytes16 buyAssetId, uint256 value);
+    event StashRemove(address account, bytes16 buyAssetId, uint256 value);
 
     /**
      * @dev
@@ -120,7 +120,7 @@ contract AcuityAtomicSwapSell {
         // Update the value deposited.
         accountValue[msg.sender] = total;
         // Log info.
-        emit DepositAdd(msg.sender, buyAssetId, value);
+        emit StashAdd(msg.sender, buyAssetId, value);
     }
 
     /**
@@ -154,7 +154,7 @@ contract AcuityAtomicSwapSell {
         // Update the value deposited.
         accountValue[msg.sender] = total;
         // Log info.
-        emit DepositRemove(msg.sender, buyAssetId, value);
+        emit StashRemove(msg.sender, buyAssetId, value);
     }
 
     /**
