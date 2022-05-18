@@ -9,14 +9,14 @@ contract AcuityAtomicSwapSell {
     mapping (address => bytes32) addressAcuAddress;
 
     /**
-     * @dev Mapping of chainIdAdapterIdAssetId (to buy) to linked list of accounts, starting with the largest.
+     * @dev Mapping of assetId (to buy) to linked list of accounts, starting with the largest.
      */
-    mapping (bytes16 => mapping (address => address)) chainIdAdapterIdAssetIdAccountsLL;
+    mapping (bytes16 => mapping (address => address)) assetIdAccountsLL;
 
     /**
-     * @dev Mapping of chainIdAdapterIdAssetId (to buy) to selling address to value.
+     * @dev Mapping of assetId (to buy) to selling address to value.
      */
-    mapping (bytes16 => mapping (address => uint)) chainIdAdapterIdAssetIdAccountValue;
+    mapping (bytes16 => mapping (address => uint)) assetIdAccountValue;
 
     /**
      * @dev
@@ -26,12 +26,12 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    event Deposit(address account, bytes16 chainIdAdapterIdAssetId, uint256 value);
+    event DepositAdd(address account, bytes16 assetId, uint256 value);
 
     /**
      * @dev
      */
-    event Withdraw(address account, bytes16 chainIdAdapterIdAssetId, uint256 value);
+    event DepositRemove(address account, bytes16 assetId, uint256 value);
 
     /**
      * @dev
@@ -82,12 +82,12 @@ contract AcuityAtomicSwapSell {
 
     /**
      * @dev
-     * @param chainIdAdapterIdAssetId
+     * @param assetId
      * @param value Size of deposit to add. Must be greater than 0.
      */
-    function addDeposit(bytes16 chainIdAdapterIdAssetId, uint value) internal {
-        mapping (address => address) storage accountsLL = chainIdAdapterIdAssetIdAccountsLL[chainIdAdapterIdAssetId];
-        mapping (address => uint) storage accountValue = chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId];
+    function depositAdd(bytes16 assetId, uint value) internal {
+        mapping (address => address) storage accountsLL = assetIdAccountsLL[assetId];
+        mapping (address => uint) storage accountValue = assetIdAccountValue[assetId];
         // Get new total.
         uint total = accountValue[msg.sender] + value;
         // Search for new previous.
@@ -119,16 +119,18 @@ contract AcuityAtomicSwapSell {
         }
         // Update the value deposited.
         accountValue[msg.sender] = total;
+        // Log info.
+        emit DepositAdd(msg.sender, assetId, value);
     }
 
     /**
      * @dev
-     * @param chainIdAdapterIdAssetId
+     * @param assetId
      * @param value Size of deposit to remove. Must be bigger than or equal to deposit value.
      */
-    function removeDeposit(bytes16 chainIdAdapterIdAssetId, uint value) internal {
-        mapping (address => address) storage accountsLL = chainIdAdapterIdAssetIdAccountsLL[chainIdAdapterIdAssetId];
-        mapping (address => uint) storage accountValue = chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId];
+    function depositRemove(bytes16 assetId, uint value) internal {
+        mapping (address => address) storage accountsLL = assetIdAccountsLL[assetId];
+        mapping (address => uint) storage accountValue = assetIdAccountValue[assetId];
         // Get new total.
         uint total = accountValue[msg.sender] - value;
         // Search for old previous.
@@ -151,46 +153,62 @@ contract AcuityAtomicSwapSell {
         }
         // Update the value deposited.
         accountValue[msg.sender] = total;
+        // Log info.
+        emit DepositRemove(msg.sender, assetId, value);
     }
 
     /**
      * @dev Deposit funds to be sold for a specific asset.
-     * @param chainIdAdapterIdAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
+     * @param assetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
      */
-    function deposit(bytes16 chainIdAdapterIdAssetId) external payable {
+    function deposit(bytes16 assetId) external payable {
         if (msg.value > 0) {
-            addDeposit(chainIdAdapterIdAssetId, msg.value);
-            // Log info.
-            emit Deposit(msg.sender, chainIdAdapterIdAssetId, msg.value);
+            depositAdd(assetId, msg.value);
         }
     }
 
-    function withdraw(bytes16 chainIdAdapterIdAssetId, uint value) external {
+    /**
+     * @dev Deposit funds to be sold for a specific asset.
+     * @param assetIdFrom 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
+     * @param assetIdTo 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
+     */
+     function move(bytes16 assetIdFrom, bytes16 assetIdTo, uint value) external {
+         // Check there is enough.
+         if (assetIdAccountValue[assetIdFrom][msg.sender] < value) revert DepositNotBigEnough();
+         // Move the deposit.
+         depositRemove(assetIdFrom, value);
+         depositAdd(assetIdTo, value);
+     }
+
+     /**
+      * @dev Withdraw funds.
+      * @param assetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
+      * @param value Amount to withdraw.
+      */
+    function withdraw(bytes16 assetId, uint value) external {
         // Check there is enough.
-        if (chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId][msg.sender] < value) revert DepositNotBigEnough();
+        if (assetIdAccountValue[assetId][msg.sender] < value) revert DepositNotBigEnough();
         // Remove the deposit.
-        removeDeposit(chainIdAdapterIdAssetId, value);
+        depositRemove(assetId, value);
         // Send the funds back.
         payable(msg.sender).transfer(value);
-        // Log info.
-        emit Withdraw(msg.sender, chainIdAdapterIdAssetId, value);
     }
 
     /**
      * @dev Create a sell lock. Called by seller.
-     * @param chainIdAdapterIdAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
+     * @param assetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
      */
-    function lockSell(bytes16 chainIdAdapterIdAssetId, bytes32 hashedSecret, address buyer, uint256 timeout, uint256 value) external {
+    function lockSell(bytes16 assetId, bytes32 hashedSecret, address buyer, uint256 timeout, uint256 value) external {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
         // Check there is enough.
-        if (chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId][msg.sender] < value) revert DepositNotBigEnough();
+        if (assetIdAccountValue[assetId][msg.sender] < value) revert DepositNotBigEnough();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, hashedSecret, buyer, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Move value into sell lock.
-        removeDeposit(chainIdAdapterIdAssetId, value);
+        depositRemove(assetId, value);
         lockIdValue[lockId] = value;
         // Log info.
 //        emit LockSell(orderId, hashedSecret, timeout, value);
@@ -217,7 +235,7 @@ contract AcuityAtomicSwapSell {
     /**
      * Called by seller after lock has timed out (if buyer did not reveal secret).
      */
-    function timeoutSell(bytes16 chainIdAdapterIdAssetId, bytes32 hashedSecret, address buyer, uint256 timeout) external {
+    function timeoutSell(bytes16 assetId, bytes32 hashedSecret, address buyer, uint256 timeout) external {
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut();
         // Calculate lockId.
@@ -226,7 +244,7 @@ contract AcuityAtomicSwapSell {
 //        require(lockIdValue[lockId] > 0, "Lock does not exist.");
 
         // Return funds and delete lock.
-        addDeposit(chainIdAdapterIdAssetId, lockIdValue[lockId]);
+        depositAdd(assetId, lockIdValue[lockId]);
         delete lockIdValue[lockId];
         // Log info.
 //        emit TimeoutSell(orderId, hashedSecret);
@@ -241,12 +259,12 @@ contract AcuityAtomicSwapSell {
 
     /**
      * @dev Get a list of deposits for a specific asset.
-     * @param chainIdAdapterIdAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
+     * @param assetId 4 bytes chainId, 4 bytes adapterId, 8 bytes assetId
      * @param limit Maximum number of deposits to return.
      */
-    function getDeposits(bytes16 chainIdAdapterIdAssetId, uint limit) view external returns (address[] memory accounts, uint[] memory values) {
-        mapping (address => address) storage accountsLL = chainIdAdapterIdAssetIdAccountsLL[chainIdAdapterIdAssetId];
-        mapping (address => uint) storage accountValue = chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId];
+    function getDeposits(bytes16 assetId, uint limit) view external returns (address[] memory accounts, uint[] memory values) {
+        mapping (address => address) storage accountsLL = assetIdAccountsLL[assetId];
+        mapping (address => uint) storage accountValue = assetIdAccountValue[assetId];
         // Count how many accounts to return.
         address account = address(0);
         uint _limit = 0;
@@ -269,8 +287,8 @@ contract AcuityAtomicSwapSell {
     /**
      * @dev
      */
-    function getDepositValue(bytes16 chainIdAdapterIdAssetId, address seller) view external returns (uint256 value) {
-        value = chainIdAdapterIdAssetIdAccountValue[chainIdAdapterIdAssetId][seller];
+    function getDepositValue(bytes16 assetId, address seller) view external returns (uint256 value) {
+        value = assetIdAccountValue[assetId][seller];
     }
 
 
