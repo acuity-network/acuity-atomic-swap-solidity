@@ -1,39 +1,40 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
-import "./ERC20.sol";
-
 contract AcuityAtomicSwap {
 
     /**
-     * @dev Mapping of address to ACU address.
+     * @dev Mapping of assetId to linked list of accounts, starting with the largest.
      */
-    mapping (address => bytes32) addressAcuAddress;
+    mapping (bytes16 => mapping (address => address)) stashAssetIdAccountsLL;
 
     /**
-     * @dev Mapping of lockId to locked value.
+     * @dev Mapping of assetId to selling address to value.
+     */
+    mapping (bytes16 => mapping (address => uint)) stashAssetIdAccountValue;
+
+    /**
+     * @dev
      */
     mapping (bytes32 => uint256) lockIdValue;
 
     /**
      * @dev
      */
-    event BuyerLock(address indexed buyer, address indexed seller, bytes32 indexed hashedSecret, uint256 timeout, uint256 value, bytes32 assetIdPrice);
+    event StashAdd(address account, bytes16 assetId, uint256 value);
 
     /**
      * @dev
      */
-    event SellerLock(address indexed seller, address indexed buyer, bytes32 indexed hashedSecret, uint256 timeout, uint256 value);
+    event StashRemove(address account, bytes16 assetId, uint256 value);
 
     /**
      * @dev
      */
-    event BuyerLockERC20(address indexed buyer, address indexed seller, bytes32 indexed hashedSecret, uint256 timeout, address tokenAddress, uint256 value, bytes32 assetIdPrice);
+    event Lock(address from, address to, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 sellAssetIdPrice);
 
-    /**
-     * @dev
-     */
-    event SellerLockERC20(address indexed seller, address indexed buyer, bytes32 indexed hashedSecret, uint256 timeout, address tokenAddress, uint256 value);
+    event Lock(address from, address to, bytes32 hashedSecret, uint256 timeout, uint256 value);
+
 
     /**
      * @dev
@@ -43,7 +44,7 @@ contract AcuityAtomicSwap {
     /**
      * @dev
      */
-    event Timeout(bytes32 indexed lockId);
+    event Timeout(bytes32 hashedSecret);
 
     /**
      * @dev
@@ -53,7 +54,17 @@ contract AcuityAtomicSwap {
     /**
      * @dev
      */
+    error StashNotBigEnough();
+
+    /**
+     * @dev
+     */
     error LockAlreadyExists(bytes32 lockId);
+
+    /**
+     * @dev
+     */
+    error LockTimedOut();
 
     /**
      * @dev
@@ -62,52 +73,177 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev
+     * @param assetId
+     * @param value Size of deposit to add. Must be greater than 0.
      */
-    error TokenTransferFailed();
+    function stashAdd(bytes16 assetId, uint value) internal {
+        mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
+        mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
+        // Get new total.
+        uint total = accountValue[msg.sender] + value;
+        // Search for new previous.
+        address prev = address(0);
+        while (accountValue[accountsLL[prev]] >= total) {
+            prev = accountsLL[prev];
+        }
+        bool replace = false;
+        // Is sender already in the list?
+        if (accountValue[msg.sender] > 0) {
+            // Search for old previous.
+            address oldPrev = address(0);
+            while (accountsLL[oldPrev] != msg.sender) {
+                oldPrev = accountsLL[oldPrev];
+            }
+            // Is it in the same position?
+            if (prev == oldPrev) {
+                replace = true;
+            }
+            else {
+                // Remove sender from current position.
+                accountsLL[oldPrev] = accountsLL[msg.sender];
+            }
+        }
+        if (!replace) {
+            // Insert into linked list.
+            accountsLL[msg.sender] = accountsLL[prev];
+            accountsLL[prev] = msg.sender;
+        }
+        // Update the value deposited.
+        accountValue[msg.sender] = total;
+        // Log info.
+        emit StashAdd(msg.sender, assetId, value);
+    }
 
     /**
      * @dev
+     * @param assetId
+     * @param value Size of deposit to remove. Must be bigger than or equal to deposit value.
      */
-    function setAcuAddress(bytes32 acuAddress) external {
-        addressAcuAddress[msg.sender] = acuAddress;
+    function stashRemove(bytes16 assetId, uint value) internal {
+        mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
+        mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
+        // Get new total.
+        uint total = accountValue[msg.sender] - value;
+        // Search for old previous.
+        address oldPrev = address(0);
+        while (accountsLL[oldPrev] != msg.sender) {
+            oldPrev = accountsLL[oldPrev];
+        }
+        // Remove sender from current position.
+        accountsLL[oldPrev] = accountsLL[msg.sender];
+        // Is it in a different position?
+        if (total > 0) {        // TODO: check this
+            // Search for new previous.
+            address prev = address(0);
+            while (accountValue[accountsLL[prev]] >= total) {
+                prev = accountsLL[prev];
+            }
+            // Insert into linked list.
+            accountsLL[msg.sender] = accountsLL[prev];
+            accountsLL[prev] = msg.sender;
+        }
+        // Update the value deposited.
+        accountValue[msg.sender] = total;
+        // Log info.
+        emit StashRemove(msg.sender, assetId, value);
     }
 
     /**
-     * @dev Called by buyer.
+     * @dev Stash funds to be sold for a specific asset.
+     * @param assetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
      */
-    function buyerLockValue(address seller, bytes32 hashedSecret, uint256 timeout, bytes32 assetIdPrice) payable external {
+    function depositStash(bytes16 assetId) external payable {
+        // Ensure value is nonzero.
+        if (msg.value == 0) revert ZeroValue();
+        // Records the deposit.
+        stashAdd(assetId, msg.value);
+    }
+
+    /**
+     * @dev Stash funds to be sold for a specific asset.
+     * @param assetIdFrom 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
+     * @param assetIdTo 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
+     */
+    function moveStash(bytes16 assetIdFrom, bytes16 assetIdTo, uint value) external {
+         // Check there is enough.
+         if (stashAssetIdAccountValue[assetIdFrom][msg.sender] < value) revert StashNotBigEnough();
+         // Move the deposit.
+         stashRemove(assetIdFrom, value);
+         stashAdd(assetIdTo, value);
+     }
+
+    /**
+     * @dev Withdraw funds.
+     * @param assetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
+     * @param value Amount to withdraw.
+     */
+    function withdrawStash(bytes16 assetId, uint value) external {
+        // Check there is enough.
+        if (stashAssetIdAccountValue[assetId][msg.sender] < value) revert StashNotBigEnough();
+        // Remove the deposit.
+        stashRemove(assetId, value);
+        // Send the funds back.
+        payable(msg.sender).transfer(value);
+    }
+
+    /**
+     * @dev Withdraw all funds.
+     * @param assetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
+     */
+    function withdrawStash(bytes16 assetId) external {
+        uint value = stashAssetIdAccountValue[assetId][msg.sender];
+        // Remove the deposit.
+        stashRemove(assetId, value);
+        // Send the funds back.
+        payable(msg.sender).transfer(value);
+    }
+
+    /**
+     * @dev Create a lock.
+     * @param to Account that can unlock the lock.
+     * @param hashedSecret Hash of the secret.
+     * @param timeout Timestamp when the lock will open.
+     * @param sellAssetIdPrice Sell order this lock is for (buyers only).
+     */
+    function lockValue(address to, bytes32 hashedSecret, uint256 timeout, bytes32 sellAssetIdPrice) payable external {
         // Ensure value is nonzero.
         if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, seller, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
-        // Store lock value.
+        // Move value into sell lock.
         lockIdValue[lockId] = msg.value;
         // Log info.
-        emit BuyerLock(msg.sender, seller, hashedSecret, timeout, msg.value, assetIdPrice);
+        emit Lock(msg.sender, to, hashedSecret, timeout, msg.value, sellAssetIdPrice);
     }
 
     /**
-     * @dev Called by seller.
+     * @dev Create a lock from stashed funds.
+     * @param stashAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
      */
-    function sellerLockValue(address buyer, bytes32 hashedSecret, uint256 timeout) payable external {
+    function lockStash(address to, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId, uint256 value) external {
         // Ensure value is nonzero.
-        if (msg.value == 0) revert ZeroValue();
+        if (value == 0) revert ZeroValue();
+        // Check there is enough.
+        if (stashAssetIdAccountValue[stashAssetId][msg.sender] < value) revert StashNotBigEnough();
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, buyer, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
-        // Store lock value.
-        lockIdValue[lockId] = msg.value;
+        // Move value into sell lock.
+        stashRemove(stashAssetId, value);
+        lockIdValue[lockId] = value;
         // Log info.
-        emit SellerLock(msg.sender, buyer, hashedSecret, timeout, msg.value);
+        emit Lock(msg.sender, to, hashedSecret, timeout, value);
     }
 
     /**
-     * @dev Called by "to". Can be called even when the lock is expired.
+     * @dev Called by "to".
      */
     function unlockValue(address from, bytes32 secret, uint256 timeout) external {
+        // Check lock has not timed out.
+        if (timeout <= block.timestamp) revert LockTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(from, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
         // Get lock value.
@@ -118,6 +254,26 @@ contract AcuityAtomicSwap {
         payable(msg.sender).transfer(value);
         // Log info.
         emit Unlock(lockId, secret);
+    }
+
+    /**
+     * @dev Called by "from" if "to" did not unlock.
+     */
+    function timeoutStash(address to, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId) external {
+        // Check lock has timed out.
+        if (timeout > block.timestamp) revert LockNotTimedOut();
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
+        // Get lock value;
+        uint256 value = lockIdValue[lockId];
+        // Ensure lock has value
+        if (lockIdValue[lockId] == 0) revert ZeroValue();
+        // Delete lock.
+        delete lockIdValue[lockId];
+        // Return funds and delete lock.
+        stashAdd(stashAssetId, value);
+        // Log info.
+        emit Timeout(lockId);
     }
 
     /**
@@ -139,110 +295,46 @@ contract AcuityAtomicSwap {
     }
 
     /**
-     * @dev
+     * @dev Get a list of deposits for a specific asset.
+     * @param assetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
+     * @param limit Maximum number of deposits to return.
      */
-    function safeTransfer(address token, address to, uint value) internal {
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20.transfer.selector, to, value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed();
+    function getStashes(bytes16 assetId, uint limit) view external returns (address[] memory accounts, uint[] memory values) {
+        mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
+        mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
+        // Count how many accounts to return.
+        address account = address(0);
+        uint _limit = 0;
+        while (accountsLL[account] != address(0) && _limit < limit) {
+            account = accountsLL[account];
+            _limit++;
+        }
+        // Allocate the arrays.
+        accounts = new address[](_limit);
+        values = new uint[](_limit);
+        // Populate the array.
+        account = accountsLL[address(0)];
+        for (uint i = 0; i < _limit; i++) {
+            accounts[i] = account;
+            values[i] = accountValue[account];
+            account = accountsLL[account];
+        }
     }
 
     /**
      * @dev
      */
-    function safeTransferFrom(address token, address from, address to, uint value) internal {
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20.transferFrom.selector, from, to, value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed();
-    }
-
-    /**
-     * @dev Called by buyer.
-     */
-    function buyerLockERC20Value(address seller, bytes32 hashedSecret, uint256 timeout, address tokenAddress, uint256 value, bytes32 assetIdPrice) external {
-        // Ensure value is nonzero.
-        if (value == 0) revert ZeroValue();
-        // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, seller, hashedSecret, timeout, tokenAddress));
-        // Ensure lockId is not already in use.
-        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
-        // Store lock value.
-        lockIdValue[lockId] = value;
-        // Transfer the value.
-        safeTransferFrom(tokenAddress, msg.sender, address(this), value);
-        // Log info.
-        emit BuyerLockERC20(msg.sender, seller, hashedSecret, timeout, tokenAddress, value, assetIdPrice);
-    }
-
-    /**
-     * @dev Called by seller.
-     */
-    function sellerLockERC20Value(address buyer, bytes32 hashedSecret, uint256 timeout, address tokenAddress, uint256 value) external {
-        // Ensure value is nonzero.
-        if (value == 0) revert ZeroValue();
-        // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, buyer, hashedSecret, timeout, tokenAddress));
-        // Ensure lockId is not already in use.
-        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
-        // Store lock value.
-        lockIdValue[lockId] = value;
-        // Transfer the value.
-        safeTransferFrom(tokenAddress, msg.sender, address(this), value);
-        // Log info.
-        emit SellerLockERC20(msg.sender, buyer, hashedSecret, timeout, tokenAddress, value);
-    }
-
-    /**
-     * @dev Called by "to". Can be called even when the lock is expired.
-     */
-    function unlockERC20Value(address from, bytes32 secret, uint256 timeout, address tokenAddress) external {
-        // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(from, msg.sender, keccak256(abi.encodePacked(secret)), timeout, tokenAddress));
-        // Get lock value.
-        uint256 value = lockIdValue[lockId];
-        // Delete lock.
-        delete lockIdValue[lockId];
-        // Transfer the value.
-        safeTransfer(tokenAddress, msg.sender, value);
-        // Log info.
-        emit Unlock(lockId, secret);
-    }
-
-    /**
-     * @dev Called by "from" if "to" did not unlock.
-     */
-    function timeoutERC20Value(address to, bytes32 hashedSecret, uint256 timeout, address tokenAddress) external {
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut();
-        // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout, tokenAddress));
-        // Get lock value;
-        uint256 value = lockIdValue[lockId];
-        // Delete lock.
-        delete lockIdValue[lockId];
-        // Transfer the value.
-        safeTransfer(tokenAddress, msg.sender, value);
-        // Log info.
-        emit Timeout(lockId);
-    }
-
-    /**
-     * @dev
-     */
-    function getAcuAddress(address seller) view external returns (bytes32 acuAddress) {
-        acuAddress = addressAcuAddress[seller];
+    function getStashValue(bytes16 assetId, address seller) view external returns (uint256 value) {
+        value = stashAssetIdAccountValue[assetId][seller];
     }
 
     /**
      * @dev
      */
     function getLockValue(address from, address to, bytes32 hashedSecret, uint256 timeout) view external returns (uint256 value) {
-        value = lockIdValue[keccak256(abi.encodePacked(from, to, hashedSecret, timeout))];
-    }
-
-    /**
-     * @dev
-     */
-    function getLockERC20Value(address from, address to, bytes32 hashedSecret, uint256 timeout, address tokenAddress) view external returns (uint256 value) {
-        value = lockIdValue[keccak256(abi.encodePacked(from, to, hashedSecret, timeout, tokenAddress))];
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encodePacked(from, to, hashedSecret, timeout));
+        value = lockIdValue[lockId];
     }
 
     /**

@@ -10,5 +10,5 @@ export ETH_PASSWORD=./scripts/password
 export ETH_GAS=40000000
 export ETH_RPC_URL=https://rinkeby.arbitrum.io/rpc
 . ~/.nix-profile/etc/profile.d/nix.sh
-dapp create AcuityAtomicSwapBuy
-dapp create AcuityAtomicSwapSell
+dapp create AcuityAccount
+dapp create AcuityAtomicSwap

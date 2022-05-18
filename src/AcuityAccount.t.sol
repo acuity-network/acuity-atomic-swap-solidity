@@ -5,7 +5,7 @@ import "ds-test/test.sol";
 
 import "./AcuityAccount.sol";
 
-contract AcuityAtomicSwapSellTest is DSTest {
+contract AcuityAccountTest is DSTest {
     AcuityAccount acuityAccount;
 
     function setUp() public {
