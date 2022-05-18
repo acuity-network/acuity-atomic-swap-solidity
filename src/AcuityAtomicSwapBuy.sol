@@ -9,14 +9,9 @@ contract AcuityAtomicSwapBuy {
     mapping (bytes32 => uint256) lockIdValue;
 
     /**
-     * @dev Mapping of seller to linked list of locks, starting with the largest.
-     */
-    mapping(address => mapping(bytes32 => bytes32)) sellerLockIdsLL;
-
-    /**
      * @dev
      */
-    event LockBuy(address buyer, address seller, bytes32 hashedSecret, uint256 timeout, uint256 value);
+    event LockBuy(address buyer, address seller, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 assetIdPrice);
 
     /**
      * @dev
@@ -46,7 +41,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev Called by buyer.
      */
-    function lockBuy(address seller, bytes32 hashedSecret, uint256 timeout) payable external {
+    function lockBuy(address seller, bytes32 hashedSecret, uint256 timeout, bytes32 assetIdPrice) payable external {
         // Ensure value is nonzero.
         if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
@@ -55,39 +50,8 @@ contract AcuityAtomicSwapBuy {
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Store lock value.
         lockIdValue[lockId] = msg.value;
-        // Get linked list of seller's lockIds.
-        mapping(bytes32 => bytes32) storage lockIdsLL = sellerLockIdsLL[seller];
-        // Search for correct place to insert lockId.
-        bytes32 prev = 0;
-        while (msg.value < lockIdValue[lockIdsLL[prev]]) {
-            prev = lockIdsLL[prev];
-        }
-        // Insert lockId into linked list.
-        lockIdsLL[lockId] = lockIdsLL[prev];
-        lockIdsLL[prev] = lockId;
         // Log info.
-        emit LockBuy(msg.sender, seller, hashedSecret, timeout, msg.value);
-    }
-
-    /**
-     * @dev Remove lock from linked list and delete value.
-     */
-    function removeLock(address seller, bytes32 lockId) internal {
-        // Get linked list of seller's lockIds.
-        mapping(bytes32 => bytes32) storage lockIdsLL = sellerLockIdsLL[seller];
-        // Find the previous lock.
-        bytes32 prev = 0;
-        while (lockIdsLL[prev] != 0) {
-            if (lockIdsLL[prev] == lockId) {
-                // Remove the lock from the list.
-                lockIdsLL[prev] = lockIdsLL[lockId];
-                break;
-            }
-            prev = lockIdsLL[prev];
-        }
-        // Remove the lock.
-        delete lockIdsLL[lockId];
-        delete lockIdValue[lockId];
+        emit LockBuy(msg.sender, seller, hashedSecret, timeout, msg.value, assetIdPrice);
     }
 
     /**
@@ -99,7 +63,7 @@ contract AcuityAtomicSwapBuy {
         // Get lock value.
         uint256 value = lockIdValue[lockId];
         // Delete lock.
-        removeLock(msg.sender, lockId);
+        delete lockIdValue[lockId];
         // Send the funds.
         payable(msg.sender).transfer(value);
         // Log info.
@@ -117,34 +81,11 @@ contract AcuityAtomicSwapBuy {
         // Get lock value;
         uint256 value = lockIdValue[lockId];
         // Delete lock.
-        removeLock(seller, lockId);
+        delete lockIdValue[lockId];
         // Send the funds.
         payable(msg.sender).transfer(value);
         // Log info.
         emit TimeoutBuy(lockId);
-    }
-
-    /**
-     * @dev
-     */
-    function getLocks(address seller, uint limit) view external returns (bytes32[] memory lockIds) {
-        // Get linked list of seller's lockIds.
-        mapping(bytes32 => bytes32) storage lockIdsLL = sellerLockIdsLL[seller];
-        // Count how many lockIds to return.
-        uint _limit = 0;
-        bytes32 prev = 0;
-        while (lockIdsLL[prev] != 0 && _limit < limit) {
-            prev = lockIdsLL[prev];
-            _limit++;
-        }
-        // Allocate the array.
-        lockIds = new bytes32[](_limit);
-        // Populate the array.
-        prev = 0;
-        for (uint i = 0; i < _limit; i++) {
-            lockIds[i] = lockIdsLL[prev];
-            prev = lockIdsLL[prev];
-        }
     }
 
     /**
