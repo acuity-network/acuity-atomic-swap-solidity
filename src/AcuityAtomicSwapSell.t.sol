@@ -16,12 +16,12 @@ contract AccountProxy {
     receive() payable external {
     }
 
-    function deposit(bytes16 assetId) payable external {
-        acuityAtomicSwapSell.deposit{value: msg.value}(assetId);
+    function depositStash(bytes16 chainIdAdapterIdAssetId) payable external {
+        acuityAtomicSwapSell.depositStash{value: msg.value}(chainIdAdapterIdAssetId);
     }
 
-    function withdraw(bytes16 assetId, uint value) external {
-        acuityAtomicSwapSell.withdraw(assetId, value);
+    function withdrawStash(bytes16 chainIdAdapterIdAssetId, uint value) external {
+        acuityAtomicSwapSell.withdrawStash(chainIdAdapterIdAssetId, value);
     }
 
     function unlockSell(address seller, bytes32 secret, uint256 timeout) external {
@@ -56,14 +56,14 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(accounts.length, 0);
         assertEq(values.length, 0);
 
-        account0.deposit{value: 50}(hex"1234");
+        account0.depositStash{value: 50}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 1);
         assertEq(values.length, 1);
         assertEq(accounts[0], address(account0));
         assertEq(values[0], 50);
 
-        account1.deposit{value: 40}(hex"1234");
+        account1.depositStash{value: 40}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 2);
         assertEq(values.length, 2);
@@ -72,7 +72,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(accounts[1], address(account1));
         assertEq(values[1], 40);
 
-        account2.deposit{value: 60}(hex"1234");
+        account2.depositStash{value: 60}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 3);
         assertEq(values.length, 3);
@@ -83,7 +83,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(accounts[2], address(account1));
         assertEq(values[2], 40);
 
-        account3.deposit{value: 45}(hex"1234");
+        account3.depositStash{value: 45}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 4);
         assertEq(values.length, 4);
@@ -96,7 +96,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(accounts[3], address(account1));
         assertEq(values[3], 40);
 
-        account0.deposit{value: 10}(hex"1234");
+        account0.depositStash{value: 10}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 4);
         assertEq(values.length, 4);
@@ -109,7 +109,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(accounts[3], address(account1));
         assertEq(values[3], 40);
 
-        account0.deposit{value: 1}(hex"1234");
+        account0.depositStash{value: 1}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 4);
         assertEq(values.length, 4);
@@ -124,13 +124,13 @@ contract AcuityAtomicSwapSellTest is DSTest {
     }
 
     function testControlWithdrawNotEnough() public {
-        account0.deposit{value: 50}(hex"1234");
-        account0.withdraw(hex"1234", 50);
+        account0.depositStash{value: 50}(hex"1234");
+        account0.withdrawStash(hex"1234", 50);
     }
 
     function testFailWithdrawNotEnough() public {
-        account0.deposit{value: 50}(hex"1234");
-        account0.withdraw(hex"1234", 51);
+        account0.depositStash{value: 50}(hex"1234");
+        account0.withdrawStash(hex"1234", 51);
     }
 
     function testWithdraw() public {
@@ -138,7 +138,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(accounts.length, 0);
         assertEq(values.length, 0);
 
-        account0.deposit{value: 50}(hex"1234");
+        account0.depositStash{value: 50}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 1);
         assertEq(values.length, 1);
@@ -146,7 +146,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(values[0], 50);
 
         uint startBalance = address(account0).balance;
-        account0.withdraw(hex"1234", 2);
+        account0.withdrawStash(hex"1234", 2);
         assertEq(startBalance + 2, address(account0).balance);
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 1);
@@ -154,7 +154,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(accounts[0], address(account0));
         assertEq(values[0], 48);
 
-        account1.deposit{value: 40}(hex"1234");
+        account1.depositStash{value: 40}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 2);
         assertEq(values.length, 2);
@@ -163,7 +163,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(accounts[1], address(account1));
         assertEq(values[1], 40);
 
-        account2.deposit{value: 60}(hex"1234");
+        account2.depositStash{value: 60}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 3);
         assertEq(values.length, 3);
@@ -174,7 +174,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(accounts[2], address(account1));
         assertEq(values[2], 40);
 
-        account3.deposit{value: 45}(hex"1234");
+        account3.depositStash{value: 45}(hex"1234");
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 4);
         assertEq(values.length, 4);
@@ -188,7 +188,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(values[3], 40);
 
         startBalance = address(account2).balance;
-        account2.withdraw(hex"1234", 40);
+        account2.withdrawStash(hex"1234", 40);
         assertEq(startBalance + 40, address(account2).balance);
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 4);
@@ -203,7 +203,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(values[3], 20);
 
         startBalance = address(account0).balance;
-        account0.withdraw(hex"1234", 3);
+        account0.withdrawStash(hex"1234", 3);
         assertEq(startBalance + 3, address(account0).balance);
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 4);
@@ -218,7 +218,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(values[3], 20);
 
         startBalance = address(account2).balance;
-        account2.withdraw(hex"1234", 20);
+        account2.withdrawStash(hex"1234", 20);
         assertEq(startBalance + 20, address(account2).balance);
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 3);
@@ -231,7 +231,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(values[2], 40);
 
         startBalance = address(account3).balance;
-        account3.withdraw(hex"1234", 45);
+        account3.withdrawStash(hex"1234", 45);
         assertEq(startBalance + 45, address(account3).balance);
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 2);
@@ -242,7 +242,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(values[1], 40);
 
         startBalance = address(account0).balance;
-        account0.withdraw(hex"1234", 45);
+        account0.withdrawStash(hex"1234", 45);
         assertEq(startBalance + 45, address(account0).balance);
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 1);
@@ -251,7 +251,7 @@ contract AcuityAtomicSwapSellTest is DSTest {
         assertEq(values[0], 40);
 
         startBalance = address(account1).balance;
-        account1.withdraw(hex"1234", 40);
+        account1.withdrawStash(hex"1234", 40);
         assertEq(startBalance + 40, address(account1).balance);
         (accounts, values) = acuityAtomicSwapSell.getDeposits(hex"1234", 50);
         assertEq(accounts.length, 0);
@@ -286,16 +286,16 @@ contract AcuityAtomicSwapSellTest is DSTest {
 */
 
     function testLockSell() public {
-        bytes16 assetId = hex"1234";
+        bytes16 chainIdAdapterIdAssetId = hex"1234";
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         uint256 timeout = block.timestamp + 1000;
         uint256 value = 10;
 
-        acuityAtomicSwapSell.deposit{value: 50}(assetId);
-        acuityAtomicSwapSell.lockSell(hex"1234", hashedSecret, address(account0), timeout, value);
+        acuityAtomicSwapSell.depositStash{value: 50}(chainIdAdapterIdAssetId);
+        acuityAtomicSwapSell.lockSell(hashedSecret, address(account0), timeout, hex"1234", value);
 
-        assertEq(acuityAtomicSwapSell.getDepositValue(assetId, address(this)), 40);
+        assertEq(acuityAtomicSwapSell.getDepositValue(chainIdAdapterIdAssetId, address(this)), 40);
         assertEq(acuityAtomicSwapSell.getLockValue(address(this), hashedSecret, address(account0), timeout), value);
     }
 
@@ -320,14 +320,14 @@ contract AcuityAtomicSwapSellTest is DSTest {
 */
 
     function testUnlockSell() public {
-        bytes16 assetId = hex"1234";
-        acuityAtomicSwapSell.deposit{value: 50}(assetId);
+        bytes16 chainIdAdapterIdAssetId = hex"1234";
+        acuityAtomicSwapSell.depositStash{value: 50}(chainIdAdapterIdAssetId);
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint256 timeout = block.timestamp + 1000;
         uint256 value = 10;
 
-        acuityAtomicSwapSell.lockSell(hex"1234", hashedSecret, address(account0), timeout, value);
+        acuityAtomicSwapSell.lockSell(hashedSecret, address(account0), timeout, hex"1234", value);
         assertEq(acuityAtomicSwapSell.getLockValue(address(this), hashedSecret, address(account0), timeout), value);
 
         assertEq(address(acuityAtomicSwapSell).balance, 50);
@@ -358,29 +358,29 @@ contract AcuityAtomicSwapSellTest is DSTest {
     }
 */
     function testTimeoutSell() public {
-        bytes16 assetId = hex"1234";
-        acuityAtomicSwapSell.deposit{value: 50}(assetId);
-        assertEq(acuityAtomicSwapSell.getDepositValue(assetId, address(this)), 50);
+        bytes16 chainIdAdapterIdAssetId = hex"1234";
+        acuityAtomicSwapSell.depositStash{value: 50}(chainIdAdapterIdAssetId);
+        assertEq(acuityAtomicSwapSell.getDepositValue(chainIdAdapterIdAssetId, address(this)), 50);
 
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint256 timeout = block.timestamp;
         uint256 value = 10;
 
-        acuityAtomicSwapSell.lockSell(assetId, hashedSecret, address(account0), timeout, value);
+        acuityAtomicSwapSell.lockSell(hashedSecret, address(account0), timeout, chainIdAdapterIdAssetId, value);
         assertEq(acuityAtomicSwapSell.getLockValue(address(this), hashedSecret, address(account0), timeout), value);
 
-        (address[] memory accounts, uint[] memory values) = acuityAtomicSwapSell.getDeposits(assetId, 50);
+        (address[] memory accounts, uint[] memory values) = acuityAtomicSwapSell.getDeposits(chainIdAdapterIdAssetId, 50);
         assertEq(accounts.length, 1);
         assertEq(accounts[0], address(this));
         assertEq(values[0], 40);
 
         uint256 startBalance = address(account0).balance;
-        acuityAtomicSwapSell.timeoutSell(assetId, hashedSecret, address(account0), timeout);
+        acuityAtomicSwapSell.timeoutSell(hashedSecret, address(account0), timeout, chainIdAdapterIdAssetId);
 
         assertEq(acuityAtomicSwapSell.getLockValue(address(this), hashedSecret, address(account0), timeout), 0);
         assertEq(address(acuityAtomicSwapSell).balance, 50);
-        (accounts, values) = acuityAtomicSwapSell.getDeposits(assetId, 50);
+        (accounts, values) = acuityAtomicSwapSell.getDeposits(chainIdAdapterIdAssetId, 50);
         assertEq(accounts.length, 1);
         assertEq(accounts[0], address(this));
         assertEq(values[0], 50);

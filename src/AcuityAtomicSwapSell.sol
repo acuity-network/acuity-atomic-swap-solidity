@@ -85,7 +85,7 @@ contract AcuityAtomicSwapSell {
      * @param buyAssetId
      * @param value Size of deposit to add. Must be greater than 0.
      */
-    function depositAdd(bytes16 buyAssetId, uint value) internal {
+    function stashAdd(bytes16 buyAssetId, uint value) internal {
         mapping (address => address) storage accountsLL = buyAssetIdAccountsLL[buyAssetId];
         mapping (address => uint) storage accountValue = buyAssetIdAccountValue[buyAssetId];
         // Get new total.
@@ -128,7 +128,7 @@ contract AcuityAtomicSwapSell {
      * @param buyAssetId
      * @param value Size of deposit to remove. Must be bigger than or equal to deposit value.
      */
-    function depositRemove(bytes16 buyAssetId, uint value) internal {
+    function stashRemove(bytes16 buyAssetId, uint value) internal {
         mapping (address => address) storage accountsLL = buyAssetIdAccountsLL[buyAssetId];
         mapping (address => uint) storage accountValue = buyAssetIdAccountValue[buyAssetId];
         // Get new total.
@@ -141,7 +141,7 @@ contract AcuityAtomicSwapSell {
         // Remove sender from current position.
         accountsLL[oldPrev] = accountsLL[msg.sender];
         // Is it in a different position?
-        if (total > 0) {
+        if (total > 0) {        // TODO: check this
             // Search for new previous.
             address prev = address(0);
             while (accountValue[accountsLL[prev]] >= total) {
@@ -161,10 +161,11 @@ contract AcuityAtomicSwapSell {
      * @dev Deposit funds to be sold for a specific asset.
      * @param buyAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
      */
-    function deposit(bytes16 buyAssetId) external payable {
-        if (msg.value > 0) {
-            depositAdd(buyAssetId, msg.value);
-        }
+    function depositStash(bytes16 buyAssetId) external payable {
+        // Ensure value is nonzero.
+        if (msg.value == 0) revert ZeroValue();
+        // Records the deposit.
+        stashAdd(buyAssetId, msg.value);
     }
 
     /**
@@ -172,24 +173,36 @@ contract AcuityAtomicSwapSell {
      * @param buyAssetIdFrom 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
      * @param buyAssetIdTo 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
      */
-     function move(bytes16 buyAssetIdFrom, bytes16 buyAssetIdTo, uint value) external {
+    function moveStash(bytes16 buyAssetIdFrom, bytes16 buyAssetIdTo, uint value) external {
          // Check there is enough.
          if (buyAssetIdAccountValue[buyAssetIdFrom][msg.sender] < value) revert DepositNotBigEnough();
          // Move the deposit.
-         depositRemove(buyAssetIdFrom, value);
-         depositAdd(buyAssetIdTo, value);
+         stashRemove(buyAssetIdFrom, value);
+         stashAdd(buyAssetIdTo, value);
      }
 
-     /**
-      * @dev Withdraw funds.
-      * @param buyAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
-      * @param value Amount to withdraw.
-      */
-    function withdraw(bytes16 buyAssetId, uint value) external {
+    /**
+     * @dev Withdraw funds.
+     * @param buyAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
+     * @param value Amount to withdraw.
+     */
+    function withdrawStash(bytes16 buyAssetId, uint value) external {
         // Check there is enough.
         if (buyAssetIdAccountValue[buyAssetId][msg.sender] < value) revert DepositNotBigEnough();
         // Remove the deposit.
-        depositRemove(buyAssetId, value);
+        stashRemove(buyAssetId, value);
+        // Send the funds back.
+        payable(msg.sender).transfer(value);
+    }
+
+    /**
+     * @dev Withdraw all funds.
+     * @param buyAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
+     */
+    function withdrawStash(bytes16 buyAssetId) external {
+        uint value = buyAssetIdAccountValue[buyAssetId][msg.sender];
+        // Remove the deposit.
+        stashRemove(buyAssetId, value);
         // Send the funds back.
         payable(msg.sender).transfer(value);
     }
@@ -198,7 +211,7 @@ contract AcuityAtomicSwapSell {
      * @dev Create a sell lock. Called by seller.
      * @param buyAssetId 4 bytes chainId, 4 bytes adapterId, 8 bytes tokenId
      */
-    function lockSell(bytes16 buyAssetId, bytes32 hashedSecret, address buyer, uint256 timeout, uint256 value) external {
+    function lockSell(bytes32 hashedSecret, address buyer, uint256 timeout, bytes16 buyAssetId, uint256 value) external {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
         // Check there is enough.
@@ -208,8 +221,24 @@ contract AcuityAtomicSwapSell {
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Move value into sell lock.
-        depositRemove(buyAssetId, value);
+        stashRemove(buyAssetId, value);
         lockIdValue[lockId] = value;
+        // Log info.
+//        emit LockSell(orderId, hashedSecret, timeout, value);
+    }
+
+    /**
+     * @dev Create a sell lock. Called by seller.
+     */
+    function lockSell(bytes32 hashedSecret, address buyer, uint256 timeout) payable external {
+        // Ensure value is nonzero.
+        if (msg.value == 0) revert ZeroValue();
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, hashedSecret, buyer, timeout));
+        // Ensure lockId is not already in use.
+        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
+        // Move value into sell lock.
+        lockIdValue[lockId] = msg.value;
         // Log info.
 //        emit LockSell(orderId, hashedSecret, timeout, value);
     }
@@ -235,17 +264,34 @@ contract AcuityAtomicSwapSell {
     /**
      * Called by seller after lock has timed out (if buyer did not reveal secret).
      */
-    function timeoutSell(bytes16 buyAssetId, bytes32 hashedSecret, address buyer, uint256 timeout) external {
+    function timeoutSell(bytes32 hashedSecret, address buyer, uint256 timeout, bytes16 buyAssetId) external {
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, hashedSecret, buyer, timeout));
-
-//        require(lockIdValue[lockId] > 0, "Lock does not exist.");
-
+        require(lockIdValue[lockId] > 0, "Lock does not exist.");
         // Return funds and delete lock.
-        depositAdd(buyAssetId, lockIdValue[lockId]);
+        stashAdd(buyAssetId, lockIdValue[lockId]);
         delete lockIdValue[lockId];
+        // Log info.
+//        emit TimeoutSell(orderId, hashedSecret);
+    }
+
+    /**
+     * Called by seller after lock has timed out (if buyer did not reveal secret).
+     */
+    function timeoutSell(bytes32 hashedSecret, address buyer, uint256 timeout) external {
+        // Check lock has timed out.
+        if (timeout > block.timestamp) revert LockNotTimedOut();
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, hashedSecret, buyer, timeout));
+        require(lockIdValue[lockId] > 0, "Lock does not exist.");
+        // Get lock value.
+        uint256 value = lockIdValue[lockId];
+        // Return funds and delete lock.
+        delete lockIdValue[lockId];
+        // Send the funds.
+        payable(msg.sender).transfer(value);
         // Log info.
 //        emit TimeoutSell(orderId, hashedSecret);
     }
@@ -290,7 +336,6 @@ contract AcuityAtomicSwapSell {
     function getDepositValue(bytes16 buyAssetId, address seller) view external returns (uint256 value) {
         value = buyAssetIdAccountValue[buyAssetId][seller];
     }
-
 
     /**
      * @dev
