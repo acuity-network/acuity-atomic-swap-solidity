@@ -11,7 +11,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev
      */
-    event LockBuy(address buyer, address seller, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 assetIdPrice);
+    event LockBuy(address buyer, address seller, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 sellAssetIdPrice);
 
     /**
      * @dev
@@ -41,7 +41,7 @@ contract AcuityAtomicSwapBuy {
     /**
      * @dev Called by buyer.
      */
-    function lockBuy(address seller, bytes32 hashedSecret, uint256 timeout, bytes32 assetIdPrice) payable external {
+    function lockBuy(address seller, bytes32 hashedSecret, uint256 timeout, bytes32 sellAssetIdPrice) payable external {
         // Ensure value is nonzero.
         if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
@@ -51,7 +51,7 @@ contract AcuityAtomicSwapBuy {
         // Store lock value.
         lockIdValue[lockId] = msg.value;
         // Log info.
-        emit LockBuy(msg.sender, seller, hashedSecret, timeout, msg.value, assetIdPrice);
+        emit LockBuy(msg.sender, seller, hashedSecret, timeout, msg.value, sellAssetIdPrice);
     }
 
     /**
