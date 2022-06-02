@@ -77,23 +77,25 @@ contract AcuityAtomicSwap {
     /**
      * @dev The stash is not big enough.
      */
-    error StashNotBigEnough();
+    error StashNotBigEnough(address owner, bytes32 assetId, uint256 value);
 
     /**
      * @dev Value has already been locked with this lockId.
-     * @param lockId lockId of the value already locked.
+     * @param lockId Lock already locked.
      */
     error LockAlreadyExists(bytes32 lockId);
 
     /**
      * @dev The lock has already timed out.
+     * @param lockId Lock timed out.
      */
-    error LockTimedOut();
+    error LockTimedOut(bytes32 lockId);
 
     /**
      * @dev The lock has not timed out yet.
+     * @param lockId Lock not timed out.
      */
-    error LockNotTimedOut();
+    error LockNotTimedOut(bytes32 lockId);
 
     /**
      * @dev Add value to stash be sold for a specific asset.
@@ -191,7 +193,7 @@ contract AcuityAtomicSwap {
      */
     function moveStash(bytes16 assetIdFrom, bytes16 assetIdTo, uint value) external {
          // Check there is enough.
-         if (stashAssetIdAccountValue[assetIdFrom][msg.sender] < value) revert StashNotBigEnough();
+         if (stashAssetIdAccountValue[assetIdFrom][msg.sender] < value) revert StashNotBigEnough(msg.sender, assetIdFrom, value);
          // Move the deposit.
          stashRemove(assetIdFrom, value);
          stashAdd(assetIdTo, value);
@@ -204,7 +206,7 @@ contract AcuityAtomicSwap {
      */
     function withdrawStash(bytes16 assetId, uint value) external {
         // Check there is enough.
-        if (stashAssetIdAccountValue[assetId][msg.sender] < value) revert StashNotBigEnough();
+        if (stashAssetIdAccountValue[assetId][msg.sender] < value) revert StashNotBigEnough(msg.sender, assetId, value);
         // Remove the deposit.
         stashRemove(assetId, value);
         // Send the funds back.
@@ -255,7 +257,7 @@ contract AcuityAtomicSwap {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
         // Check there is enough.
-        if (stashAssetIdAccountValue[stashAssetId][msg.sender] < value) revert StashNotBigEnough();
+        if (stashAssetIdAccountValue[stashAssetId][msg.sender] < value) revert StashNotBigEnough(msg.sender, stashAssetId, value);
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
         // Ensure lockId is not already in use.
@@ -271,10 +273,10 @@ contract AcuityAtomicSwap {
      * @dev Called by "to".
      */
     function unlockValue(address from, bytes32 secret, uint256 timeout) external {
-        // Check lock has not timed out.
-        if (timeout <= block.timestamp) revert LockTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(from, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
+        // Check lock has not timed out.
+        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Get lock value.
         uint256 value = lockIdValue[lockId];
         // Delete lock.
@@ -289,10 +291,10 @@ contract AcuityAtomicSwap {
      * @dev Called by "from" if "to" did not unlock.
      */
     function timeoutStash(address to, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId) external {
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
+        // Check lock has timed out.
+        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value;
         uint256 value = lockIdValue[lockId];
         // Ensure lock has value
@@ -309,10 +311,10 @@ contract AcuityAtomicSwap {
      * @dev Called by "from" if "to" did not unlock.
      */
     function timeoutValue(address to, bytes32 hashedSecret, uint256 timeout) external {
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
+        // Check lock has timed out.
+        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value;
         uint256 value = lockIdValue[lockId];
         // Delete lock.
