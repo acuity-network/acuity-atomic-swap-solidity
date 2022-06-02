@@ -36,24 +36,24 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev Value has been locked with sell asset info.
-     * @param from Account that locked the value.
-     * @param to Account to receive the value.
+     * @param sender Account that locked the value.
+     * @param recipient Account to receive the value.
      * @param hashedSecret Hash of the secret required to unlock the value.
-     * @param timeout Time after which "from" can retrieve the value.
+     * @param timeout Time after which sender can retrieve the value.
      * @param value Value being locked.
      * @param sellAssetIdPrice 16 bytes assetId the value is paying for. 16 bytes price the asset is being sold for.
      */
-    event Lock(address from, address to, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 sellAssetIdPrice);
+    event Lock(address sender, address recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 sellAssetIdPrice);
 
     /**
      * @dev Value has been locked.
-     * @param from Account that locked the value.
-     * @param to Account to receive the value.
+     * @param sender Account that locked the value.
+     * @param recipient Account to receive the value.
      * @param hashedSecret Hash of the secret required to unlock the value.
-     * @param timeout Time after which "from" can retrieve the value.
+     * @param timeout Time after which sender can retrieve the value.
      * @param value Value being locked.
      */
-    event Lock(address from, address to, bytes32 hashedSecret, uint256 timeout, uint256 value);
+    event Lock(address sender, address recipient, bytes32 hashedSecret, uint256 timeout, uint256 value);
 
 
     /**
@@ -227,57 +227,57 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev Lock value.
-     * @param to Account that can unlock the lock.
+     * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
      * @param sellAssetIdPrice Sell order this lock is for.
      */
-    function lockValue(address to, bytes32 hashedSecret, uint256 timeout, bytes32 sellAssetIdPrice) payable external {
+    function lockValue(address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 sellAssetIdPrice) payable external {
         // Ensure value is nonzero.
         if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Move value into sell lock.
         lockIdValue[lockId] = msg.value;
         // Log info.
-        emit Lock(msg.sender, to, hashedSecret, timeout, msg.value, sellAssetIdPrice);
+        emit Lock(msg.sender, recipient, hashedSecret, timeout, msg.value, sellAssetIdPrice);
     }
 
     /**
      * @dev Lock stashed value.
-     * @param to Account that can unlock the lock.
+     * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
      * @param stashAssetId Asset the stash is to be sold for.
      * @param value Value from the stash to lock.
      */
-    function lockStash(address to, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId, uint256 value) external {
+    function lockStash(address recipient, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId, uint256 value) external {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
         // Check there is enough.
         if (stashAssetIdAccountValue[stashAssetId][msg.sender] < value) revert StashNotBigEnough(msg.sender, stashAssetId, value);
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Move value into sell lock.
         stashRemove(stashAssetId, value);
         lockIdValue[lockId] = value;
         // Log info.
-        emit Lock(msg.sender, to, hashedSecret, timeout, value);
+        emit Lock(msg.sender, recipient, hashedSecret, timeout, value);
     }
 
     /**
      * @dev Transfer value from lock to receiver.
-     * @param from Sender of the value.
+     * @param sender Sender of the value.
      * @param secret Secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function unlockValue(address from, bytes32 secret, uint256 timeout) external {
+    function unlockValue(address sender, bytes32 secret, uint256 timeout) external {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(from, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
+        bytes32 lockId = keccak256(abi.encodePacked(sender, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
         // Check lock has not timed out.
         if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Get lock value.
@@ -292,13 +292,13 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev Transfer value from lock back to sender's stash.
-     * @param to Receiver of the value.
-     * @param hashedSecret Hash of secret to unlock the value.
+     * @param recipient Receiver of the value.
+     * @param hashedSecret Hash of secret recipient unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutStash(address to, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId) external {
+    function timeoutStash(address recipient, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId) external {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, recipient, hashedSecret, timeout));
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value;
@@ -315,13 +315,13 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev Transfer value from lock back to sender.
-     * @param to Receiver of the value.
+     * @param recipient Receiver of the value.
      * @param hashedSecret Hash of secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutValue(address to, bytes32 hashedSecret, uint256 timeout) external {
+    function timeoutValue(address recipient, bytes32 hashedSecret, uint256 timeout) external {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, to, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, recipient, hashedSecret, timeout));
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value;
@@ -373,15 +373,15 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev Get value locked.
-     * @param from Account that locked the value.
-     * @param to Account to receive the value.
+     * @param sender Account that locked the value.
+     * @param recipient Account to receive the value.
      * @param hashedSecret Hash of the secret required to unlock the value.
-     * @param timeout Time after which "from" can retrieve the value.
+     * @param timeout Time after which sender can retrieve the value.
      * @return value Value held in the lock.
      */
-    function getLockValue(address from, address to, bytes32 hashedSecret, uint256 timeout) view external returns (uint256 value) {
+    function getLockValue(address sender, address recipient, bytes32 hashedSecret, uint256 timeout) view external returns (uint256 value) {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(from, to, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encodePacked(sender, recipient, hashedSecret, timeout));
         value = lockIdValue[lockId];
     }
 
