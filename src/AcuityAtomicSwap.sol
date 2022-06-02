@@ -270,7 +270,10 @@ contract AcuityAtomicSwap {
     }
 
     /**
-     * @dev Called by "to".
+     * @dev Transfer value from lock to receiver.
+     * @param from Sender of the value.
+     * @param secret Secret to unlock the value.
+     * @param timeout Timeout of the lock.
      */
     function unlockValue(address from, bytes32 secret, uint256 timeout) external {
         // Calculate lockId.
@@ -288,7 +291,10 @@ contract AcuityAtomicSwap {
     }
 
     /**
-     * @dev Called by "from" if "to" did not unlock.
+     * @dev Transfer value from lock back to sender's stash.
+     * @param to Receiver of the value.
+     * @param hashedSecret Hash of secret to unlock the value.
+     * @param timeout Timeout of the lock.
      */
     function timeoutStash(address to, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId) external {
         // Calculate lockId.
@@ -308,7 +314,10 @@ contract AcuityAtomicSwap {
     }
 
     /**
-     * @dev Called by "from" if "to" did not unlock.
+     * @dev Transfer value from lock back to sender.
+     * @param to Receiver of the value.
+     * @param hashedSecret Hash of secret to unlock the value.
+     * @param timeout Timeout of the lock.
      */
     function timeoutValue(address to, bytes32 hashedSecret, uint256 timeout) external {
         // Calculate lockId.
