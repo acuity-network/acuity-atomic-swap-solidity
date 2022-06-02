@@ -9,12 +9,15 @@ contract AcuityAccount {
     mapping (address => bytes32) accountAcuAccount;
 
     /**
-     * @dev
+     * @dev ACU account has been set for an account.
+     * @param account Account that has set its ACU account.
+     * @param acuAccount ACU account that has been set for account.
      */
     event AcuAccountSet(address account, bytes32 acuAccount);
 
     /**
-     * @dev
+     * @dev Set Acu account for sender.
+     * @param acuAccount ACU account to set for sender.
      */
     function setAcuAccount(bytes32 acuAccount) external {
         accountAcuAccount[msg.sender] = acuAccount;
@@ -22,7 +25,9 @@ contract AcuityAccount {
     }
 
     /**
-     * @dev
+     * @dev Get ACU account for account.
+     * @param account Account to get ACU account for.
+     * @return acuAccount ACU account for account.
      */
     function getAcuAccount(address account) view external returns (bytes32 acuAccount) {
         acuAccount = accountAcuAccount[account];
