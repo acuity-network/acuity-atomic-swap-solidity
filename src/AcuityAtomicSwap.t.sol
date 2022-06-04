@@ -46,7 +46,15 @@ contract AcuityAtomicSwapTest is DSTest {
         account3 = new AccountProxy(acuityAtomicSwap);
     }
 
-    function testDeposit() public {
+    function testControlDepositStashZeroValue() public {
+        account0.depositStash{value: 50}(hex"1234");
+    }
+
+    function testFailDepositStashZeroValue() public {
+        account0.depositStash{value: 0}(hex"1234");
+    }
+
+    function testDepositStash() public {
         (address[] memory accounts, uint[] memory values) = acuityAtomicSwap.getStashes(hex"1234", 50);
         assertEq(accounts.length, 0);
         assertEq(values.length, 0);
