@@ -6,12 +6,12 @@ contract AcuityAtomicSwap {
     /**
      * @dev Mapping of assetId to linked list of accounts, starting with the largest.
      */
-    mapping (bytes16 => mapping (address => address)) stashAssetIdAccountsLL;
+    mapping (bytes32 => mapping (address => address)) stashAssetIdAccountsLL;
 
     /**
      * @dev Mapping of assetId to selling address to value.
      */
-    mapping (bytes16 => mapping (address => uint)) stashAssetIdAccountValue;
+    mapping (bytes32 => mapping (address => uint)) stashAssetIdAccountValue;
 
     /**
      * @dev Mapping of lockId to value stored in the lock.
@@ -24,7 +24,7 @@ contract AcuityAtomicSwap {
      * @param assetId Asset the stash is to be sold for.
      * @param value How much value has been added to the stash.
      */
-    event StashAdd(address account, bytes16 assetId, uint256 value);
+    event StashAdd(address account, bytes32 assetId, uint256 value);
 
     /**
      * @dev Value has been removed from a stash.
@@ -32,7 +32,7 @@ contract AcuityAtomicSwap {
      * @param assetId Asset the stash is to be sold for.
      * @param value How much value has been removed from the stash.
      */
-    event StashRemove(address account, bytes16 assetId, uint256 value);
+    event StashRemove(address account, bytes32 assetId, uint256 value);
 
     /**
      * @dev Value has been locked with sell asset info.
@@ -41,9 +41,10 @@ contract AcuityAtomicSwap {
      * @param hashedSecret Hash of the secret required to unlock the value.
      * @param timeout Time after which sender can retrieve the value.
      * @param value Value being locked.
-     * @param sellAssetIdPrice 16 bytes assetId the value is paying for. 16 bytes price the asset is being sold for.
+     * @param sellAssetId Asset to buy.
+     * @param price Unit price of asset to buy.
      */
-    event Lock(address sender, address recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 sellAssetIdPrice);
+    event Lock(address sender, address recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 sellAssetId, uint256 price);
 
     /**
      * @dev Value has been locked.
@@ -54,7 +55,6 @@ contract AcuityAtomicSwap {
      * @param value Value being locked.
      */
     event Lock(address sender, address recipient, bytes32 hashedSecret, uint256 timeout, uint256 value);
-
 
     /**
      * @dev Value has been unlocked.
@@ -76,6 +76,9 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev The stash is not big enough.
+     * @param owner Owner of the stash.
+     * @param assetId Asset the stash is to be sold for.
+     * @param value Value to unstash.
      */
     error StashNotBigEnough(address owner, bytes32 assetId, uint256 value);
 
@@ -102,7 +105,7 @@ contract AcuityAtomicSwap {
      * @param assetId Asset the stash is to be sold for.
      * @param value Size of deposit to add. Must be greater than 0.
      */
-    function stashAdd(bytes16 assetId, uint value) internal {
+    function stashAdd(bytes32 assetId, uint value) internal {
         mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
         mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
         // Get new total.
@@ -145,7 +148,7 @@ contract AcuityAtomicSwap {
      * @param assetId Asset the stash is to be sold for.
      * @param value Size of deposit to remove. Must be bigger than or equal to deposit value.
      */
-    function stashRemove(bytes16 assetId, uint value) internal {
+    function stashRemove(bytes32 assetId, uint value) internal {
         mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
         mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
         // Get new total.
@@ -178,7 +181,7 @@ contract AcuityAtomicSwap {
      * @dev Stash value to be sold for a specific asset.
      * @param assetId Asset the stash is to be sold for.
      */
-    function depositStash(bytes16 assetId) external payable {
+    function depositStash(bytes32 assetId) external payable {
         // Ensure value is nonzero.
         if (msg.value == 0) revert ZeroValue();
         // Records the deposit.
@@ -191,7 +194,7 @@ contract AcuityAtomicSwap {
      * @param assetIdTo Asset the destination stash is to be sold for.
      * @param value Value to move.
      */
-    function moveStash(bytes16 assetIdFrom, bytes16 assetIdTo, uint value) external {
+    function moveStash(bytes32 assetIdFrom, bytes32 assetIdTo, uint value) external {
          // Check there is enough.
          if (stashAssetIdAccountValue[assetIdFrom][msg.sender] < value) revert StashNotBigEnough(msg.sender, assetIdFrom, value);
          // Move the deposit.
@@ -204,7 +207,7 @@ contract AcuityAtomicSwap {
      * @param assetId Asset the stash is to be sold for.
      * @param value Value to withdraw.
      */
-    function withdrawStash(bytes16 assetId, uint value) external {
+    function withdrawStash(bytes32 assetId, uint value) external {
         // Check there is enough.
         if (stashAssetIdAccountValue[assetId][msg.sender] < value) revert StashNotBigEnough(msg.sender, assetId, value);
         // Remove the deposit.
@@ -217,7 +220,7 @@ contract AcuityAtomicSwap {
      * @dev Withdraw all value from a stash.
      * @param assetId Asset the stash is to be sold for.
      */
-    function withdrawStash(bytes16 assetId) external {
+    function withdrawStash(bytes32 assetId) external {
         uint value = stashAssetIdAccountValue[assetId][msg.sender];
         // Remove the deposit.
         stashRemove(assetId, value);
@@ -230,9 +233,10 @@ contract AcuityAtomicSwap {
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
-     * @param sellAssetIdPrice Sell order this lock is for.
+     * @param sellAssetId Asset to buy.
+     * @param price Unit price of asset to buy.
      */
-    function lockValue(address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 sellAssetIdPrice) payable external {
+    function lockValue(address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 sellAssetId, uint256 price) payable external {
         // Ensure value is nonzero.
         if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
@@ -242,7 +246,7 @@ contract AcuityAtomicSwap {
         // Move value into sell lock.
         lockIdValue[lockId] = msg.value;
         // Log info.
-        emit Lock(msg.sender, recipient, hashedSecret, timeout, msg.value, sellAssetIdPrice);
+        emit Lock(msg.sender, recipient, hashedSecret, timeout, msg.value, sellAssetId, price);
     }
 
     /**
@@ -253,7 +257,7 @@ contract AcuityAtomicSwap {
      * @param stashAssetId Asset the stash is to be sold for.
      * @param value Value from the stash to lock.
      */
-    function lockStash(address recipient, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId, uint256 value) external {
+    function lockStash(address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 stashAssetId, uint256 value) external {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
         // Check there is enough.
@@ -296,7 +300,7 @@ contract AcuityAtomicSwap {
      * @param hashedSecret Hash of secret recipient unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutStash(address recipient, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId) external {
+    function timeoutStash(address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 stashAssetId) external {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encodePacked(msg.sender, recipient, hashedSecret, timeout));
         // Check lock has timed out.
@@ -339,7 +343,7 @@ contract AcuityAtomicSwap {
      * @param assetId Asset the stash is to be sold for.
      * @param limit Maximum number of deposits to return.
      */
-    function getStashes(bytes16 assetId, uint limit) view external returns (address[] memory accounts, uint[] memory values) {
+    function getStashes(bytes32 assetId, uint limit) view external returns (address[] memory accounts, uint[] memory values) {
         mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
         mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
         // Count how many accounts to return.
@@ -367,7 +371,7 @@ contract AcuityAtomicSwap {
      * @param seller Owner of the stash.
      * @return value Value held in the stash.
      */
-    function getStashValue(bytes16 assetId, address seller) view external returns (uint256 value) {
+    function getStashValue(bytes32 assetId, address seller) view external returns (uint256 value) {
         value = stashAssetIdAccountValue[assetId][seller];
     }
 
