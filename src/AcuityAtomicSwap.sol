@@ -55,7 +55,6 @@ contract AcuityAtomicSwap {
      */
     event Lock(address sender, address recipient, bytes32 hashedSecret, uint256 timeout, uint256 value);
 
-
     /**
      * @dev Value has been unlocked.
      * @param lockId The lockId of the value that has been unlocked.
@@ -76,8 +75,11 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev The stash is not big enough.
+     * @param owner Account removing from a stash.
+     * @param assetId Asset the stash is to be sold for.
+     * @param value How much value was attempted to be removed from the stash.
      */
-    error StashNotBigEnough(address owner, bytes32 assetId, uint256 value);
+    error StashNotBigEnough(address owner, bytes16 assetId, uint256 value);
 
     /**
      * @dev Value has already been locked with this lockId.
