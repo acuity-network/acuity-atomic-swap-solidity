@@ -157,18 +157,25 @@ contract AcuityAtomicSwap {
         while (accountsLL[oldPrev] != msg.sender) {
             oldPrev = accountsLL[oldPrev];
         }
-        // Remove sender from current position.
-        accountsLL[oldPrev] = accountsLL[msg.sender];
-        // Is it in a different position?
-        if (total > 0) {        // TODO: check this
+        // Is there still a stash?
+        if (total > 0) {
             // Search for new previous.
             address prev = address(0);
             while (accountValue[accountsLL[prev]] >= total) {
                 prev = accountsLL[prev];
             }
-            // Insert into linked list.
-            accountsLL[msg.sender] = accountsLL[prev];
-            accountsLL[prev] = msg.sender;
+            // Is it in a new position?
+            if (prev != msg.sender) {
+                // Remove sender from old position.
+                accountsLL[oldPrev] = accountsLL[msg.sender];
+                // Insert into new position.
+                accountsLL[msg.sender] = accountsLL[prev];
+                accountsLL[prev] = msg.sender;
+            }
+        }
+        else {
+            // Remove sender from list.
+            accountsLL[oldPrev] = accountsLL[msg.sender];
         }
         // Update the value deposited.
         accountValue[msg.sender] = total;
