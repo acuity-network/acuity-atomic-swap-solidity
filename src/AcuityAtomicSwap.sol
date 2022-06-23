@@ -245,7 +245,7 @@ contract AcuityAtomicSwap {
         // Ensure value is nonzero.
         if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, recipient, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Move value into sell lock.
@@ -268,7 +268,7 @@ contract AcuityAtomicSwap {
         // Check there is enough.
         if (stashAssetIdAccountValue[stashAssetId][msg.sender] < value) revert StashNotBigEnough(msg.sender, stashAssetId, value);
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, recipient, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Move value into sell lock.
@@ -286,7 +286,7 @@ contract AcuityAtomicSwap {
      */
     function unlockValue(address sender, bytes32 secret, uint256 timeout) external {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(sender, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
+        bytes32 lockId = keccak256(abi.encode(sender, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
         // Check lock has not timed out.
         if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Get lock value.
@@ -307,7 +307,7 @@ contract AcuityAtomicSwap {
      */
     function timeoutStash(address recipient, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId) external {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, recipient, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value;
@@ -330,7 +330,7 @@ contract AcuityAtomicSwap {
      */
     function timeoutValue(address recipient, bytes32 hashedSecret, uint256 timeout) external {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(msg.sender, recipient, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value;
@@ -390,17 +390,29 @@ contract AcuityAtomicSwap {
      */
     function getLockValue(address sender, address recipient, bytes32 hashedSecret, uint256 timeout) view external returns (uint256 value) {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encodePacked(sender, recipient, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encode(sender, recipient, hashedSecret, timeout));
         value = lockIdValue[lockId];
     }
 
     /**
-    * @dev Get value locked.
-    * @param lockId Lock to examine.
-    * @return value Value held in the lock.
+     * @dev Get value locked.
+     * @param lockId Lock to examine.
+     * @return value Value held in the lock.
      */
     function getLockValue(bytes32 lockId) view external returns (uint256 value) {
         value = lockIdValue[lockId];
+    }
+
+    /**
+     * @dev Calculate lockId
+     * @param sender Sender of the lock's value.
+     * @param recipient Receiver of the lock's value.
+     * @param hashedSecret Hash of the lock's secret.
+     * @param timeout Timeout of the lock.
+     * @return lockId lockId for the lock.
+     */
+    function getLockId(address sender, address recipient, bytes32 hashedSecret, uint256 timeout) pure external returns (bytes32 lockId) {
+        lockId = keccak256(abi.encode(sender, recipient, hashedSecret, timeout));
     }
 
 }
