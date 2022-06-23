@@ -24,7 +24,7 @@ contract AcuityAtomicSwap {
      * @param assetId Asset the stash is to be sold for.
      * @param value How much value has been added to the stash.
      */
-    event StashAdd(address account, bytes16 assetId, uint256 value);
+    event StashAdd(address indexed account, bytes16 indexed assetId, uint256 value);
 
     /**
      * @dev Value has been removed from a stash.
@@ -32,7 +32,7 @@ contract AcuityAtomicSwap {
      * @param assetId Asset the stash is to be sold for.
      * @param value How much value has been removed from the stash.
      */
-    event StashRemove(address account, bytes16 assetId, uint256 value);
+    event StashRemove(address indexed account, bytes16 indexed assetId, uint256 value);
 
     /**
      * @dev Value has been locked with sell asset info.
@@ -43,7 +43,7 @@ contract AcuityAtomicSwap {
      * @param value Value being locked.
      * @param sellAssetIdPrice 16 bytes assetId the value is paying for. 16 bytes price the asset is being sold for.
      */
-    event Lock(address sender, address recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 sellAssetIdPrice);
+    event Lock(address indexed sender, address indexed recipient, bytes32 indexed hashedSecret, uint256 timeout, uint256 value, bytes32 sellAssetIdPrice);
 
     /**
      * @dev Value has been locked.
@@ -53,7 +53,7 @@ contract AcuityAtomicSwap {
      * @param timeout Time after which sender can retrieve the value.
      * @param value Value being locked.
      */
-    event Lock(address sender, address recipient, bytes32 hashedSecret, uint256 timeout, uint256 value);
+    event Lock(address indexed sender, address indexed recipient, bytes32 indexed hashedSecret, uint256 timeout, uint256 value);
 
     /**
      * @dev Value has been unlocked.

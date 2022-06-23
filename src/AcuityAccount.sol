@@ -13,7 +13,7 @@ contract AcuityAccount {
      * @param account Account that has set its ACU account.
      * @param acuAccount ACU account that has been set for account.
      */
-    event AcuAccountSet(address account, bytes32 acuAccount);
+    event AcuAccountSet(address indexed account, bytes32 indexed acuAccount);
 
     /**
      * @dev Set Acu account for sender.
