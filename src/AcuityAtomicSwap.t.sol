@@ -288,7 +288,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 */
 
-    function testLockStash() public {
+    function testLockSell() public {
         bytes16 assetId = hex"1234";
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
@@ -296,7 +296,7 @@ contract AcuityAtomicSwapTest is DSTest {
         uint256 value = 10;
 
         acuityAtomicSwap.depositStash{value: 50}(assetId);
-        acuityAtomicSwap.lockStash(address(account0), hashedSecret, timeout, hex"1234", value);
+        acuityAtomicSwap.lockSell(address(account0), hashedSecret, timeout, hex"1234", value, hex"1234");
 
         assertEq(acuityAtomicSwap.getStashValue(assetId, address(this)), 40);
         assertEq(acuityAtomicSwap.getLockValue(address(this), address(account0), hashedSecret, timeout), value);
@@ -330,7 +330,7 @@ contract AcuityAtomicSwapTest is DSTest {
         uint256 timeout = block.timestamp + 1000;
         uint256 value = 10;
 
-        acuityAtomicSwap.lockStash(address(account0), hashedSecret, timeout, hex"1234", value);
+        acuityAtomicSwap.lockSell(address(account0), hashedSecret, timeout, hex"1234", value, hex"1234");
         assertEq(acuityAtomicSwap.getLockValue(address(this), address(account0), hashedSecret, timeout), value);
 
         assertEq(address(acuityAtomicSwap).balance, 50);
@@ -369,7 +369,7 @@ contract AcuityAtomicSwapTest is DSTest {
         uint256 timeout = block.timestamp;
         uint256 value = 10;
 
-        acuityAtomicSwap.lockStash(address(account0), hashedSecret, timeout, assetId, value);
+        acuityAtomicSwap.lockSell(address(account0), hashedSecret, timeout, assetId, value, hex"1234");
         assertEq(acuityAtomicSwap.getLockValue(address(this), address(account0), hashedSecret, timeout), value);
 
         (address[] memory accounts, uint[] memory values) = acuityAtomicSwap.getStashes(assetId, 50);

@@ -41,9 +41,11 @@ contract AcuityAtomicSwap {
      * @param hashedSecret Hash of the secret required to unlock the value.
      * @param timeout Time after which sender can retrieve the value.
      * @param value Value being locked.
-     * @param sellAssetIdPrice 16 bytes assetId the value is paying for. 16 bytes price the asset is being sold for.
+     * @param lockId Intrinisic lockId.
+     * @param sellAssetId assetId the value is paying for.
+     * @param sellPrice Price the asset is being sold for.
      */
-    event Lock(address indexed sender, address indexed recipient, bytes32 indexed hashedSecret, uint256 timeout, uint256 value, bytes32 sellAssetIdPrice);
+    event BuyLock(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 lockId, bytes16 sellAssetId, uint256 sellPrice);
 
     /**
      * @dev Value has been locked.
@@ -52,21 +54,28 @@ contract AcuityAtomicSwap {
      * @param hashedSecret Hash of the secret required to unlock the value.
      * @param timeout Time after which sender can retrieve the value.
      * @param value Value being locked.
+     * @param lockId Intrinisic lockId.
+     * @param buyAssetId The asset of the buy lock this lock is responding to.
+     * @param buyLockId The buy lock this lock is responding to.
      */
-    event Lock(address indexed sender, address indexed recipient, bytes32 indexed hashedSecret, uint256 timeout, uint256 value);
+    event SellLock(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 lockId, bytes16 buyAssetId, bytes32 buyLockId);
 
     /**
      * @dev Value has been unlocked.
-     * @param lockId The lockId of the value that has been unlocked.
+     * @param sender Account that locked the value.
+     * @param recipient Account that received the value.
+     * @param lockId Intrinisic lockId.
      * @param secret The secret used to unlock the value.
      */
-    event Unlock(bytes32 indexed lockId, bytes32 secret);
+    event Unlock(address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
 
     /**
      * @dev Value has been timed out.
-     * @param lockId The lockId of the value that has been timed out.
+     * @param sender Account that locked the value.
+     * @param recipient Account to receive the value.
+     * @param lockId Intrinisic lockId.
      */
-    event Timeout(bytes32 indexed lockId);
+    event Timeout(address indexed sender, address indexed recipient, bytes32 lockId);
 
     /**
      * @dev No value was provided.
@@ -239,9 +248,10 @@ contract AcuityAtomicSwap {
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
-     * @param sellAssetIdPrice Sell order this lock is for.
+     * @param sellAssetId assetId the value is paying for.
+     * @param sellPrice Price the asset is being sold for.
      */
-    function lockValue(address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 sellAssetIdPrice) payable external {
+    function lockBuy(address recipient, bytes32 hashedSecret, uint256 timeout, bytes16 sellAssetId, uint256 sellPrice) payable external {
         // Ensure value is nonzero.
         if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
@@ -251,18 +261,19 @@ contract AcuityAtomicSwap {
         // Move value into sell lock.
         lockIdValue[lockId] = msg.value;
         // Log info.
-        emit Lock(msg.sender, recipient, hashedSecret, timeout, msg.value, sellAssetIdPrice);
+        emit BuyLock(msg.sender, recipient, hashedSecret, timeout, msg.value, lockId, sellAssetId, sellPrice);
     }
 
     /**
      * @dev Lock stashed value.
+     * @param buyLockId The buy lock this lock is responding to.
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
      * @param stashAssetId Asset the stash is to be sold for.
      * @param value Value from the stash to lock.
      */
-    function lockStash(address recipient, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId, uint256 value) external {
+    function lockSell(address recipient, bytes32 hashedSecret, uint256 timeout, bytes16 stashAssetId, uint256 value, bytes32 buyLockId) external {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
         // Check there is enough.
@@ -275,7 +286,7 @@ contract AcuityAtomicSwap {
         stashRemove(stashAssetId, value);
         lockIdValue[lockId] = value;
         // Log info.
-        emit Lock(msg.sender, recipient, hashedSecret, timeout, value);
+        emit SellLock(msg.sender, recipient, hashedSecret, timeout, value, lockId, stashAssetId, buyLockId);
     }
 
     /**
@@ -296,7 +307,7 @@ contract AcuityAtomicSwap {
         // Transfer the value.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit Unlock(lockId, secret);
+        emit Unlock(sender, msg.sender, lockId, secret);
     }
 
     /**
@@ -319,7 +330,7 @@ contract AcuityAtomicSwap {
         // Return funds and delete lock.
         stashAdd(stashAssetId, value);
         // Log info.
-        emit Timeout(lockId);
+        emit Timeout(msg.sender, recipient, lockId);
     }
 
     /**
@@ -340,7 +351,7 @@ contract AcuityAtomicSwap {
         // Transfer the value.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit Timeout(lockId);
+        emit Timeout(msg.sender, recipient, lockId);
     }
 
     /**
@@ -401,18 +412,6 @@ contract AcuityAtomicSwap {
      */
     function getLockValue(bytes32 lockId) view external returns (uint256 value) {
         value = lockIdValue[lockId];
-    }
-
-    /**
-     * @dev Calculate lockId
-     * @param sender Sender of the lock's value.
-     * @param recipient Receiver of the lock's value.
-     * @param hashedSecret Hash of the lock's secret.
-     * @param timeout Timeout of the lock.
-     * @return lockId lockId for the lock.
-     */
-    function getLockId(address sender, address recipient, bytes32 hashedSecret, uint256 timeout) pure external returns (bytes32 lockId) {
-        lockId = keccak256(abi.encode(sender, recipient, hashedSecret, timeout));
     }
 
 }
