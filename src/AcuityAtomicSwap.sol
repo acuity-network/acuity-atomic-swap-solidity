@@ -357,13 +357,23 @@ contract AcuityAtomicSwap {
     /**
      * @dev Get a list of deposits for a specific asset.
      * @param assetId Asset the stash is to be sold for.
+     * @param offset Number of deposits to skip from the start of the list.
      * @param limit Maximum number of deposits to return.
      */
-    function getStashes(bytes16 assetId, uint limit) view external returns (address[] memory accounts, uint[] memory values) {
+    function getStashes(bytes16 assetId, uint offset, uint limit) view external returns (address[] memory accounts, uint[] memory values) {
         mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
         mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
+        // Find first account after offset.
+        address start = address(0);
+        while (offset > 0) {
+          if (accountsLL[start] == address(0)) {
+            break;
+          }
+          start = accountsLL[start];
+          offset--;
+        }
         // Count how many accounts to return.
-        address account = address(0);
+        address account = start;
         uint _limit = 0;
         while (accountsLL[account] != address(0) && _limit < limit) {
             account = accountsLL[account];
@@ -373,7 +383,7 @@ contract AcuityAtomicSwap {
         accounts = new address[](_limit);
         values = new uint[](_limit);
         // Populate the array.
-        account = accountsLL[address(0)];
+        account = accountsLL[start];
         for (uint i = 0; i < _limit; i++) {
             accounts[i] = account;
             values[i] = accountValue[account];
