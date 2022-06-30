@@ -24,8 +24,8 @@ contract AccountProxy {
         acuityAtomicSwap.withdrawStash(assetId, value);
     }
 
-    function unlockValue(address seller, bytes32 secret, uint256 timeout) external {
-        acuityAtomicSwap.unlockValue(seller, secret, timeout);
+    function unlockByRecipient(address seller, bytes32 secret, uint256 timeout) external {
+        acuityAtomicSwap.unlockByRecipient(seller, secret, timeout);
     }
 }
 
@@ -309,7 +309,7 @@ contract AcuityAtomicSwapTest is DSTest {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         acuityAtomicSwap.lockValue(hex"1234", hex"1234", hashedSecret, address(this), block.timestamp + 1000, 40);
-        acuityAtomicSwap.unlockValue(orderId, secret, block.timestamp + 1000);
+        acuityAtomicSwap.unlockByRecipient(orderId, secret, block.timestamp + 1000);
     }
 
     function testFailUnlockValueTimedOut() public {
@@ -318,11 +318,11 @@ contract AcuityAtomicSwapTest is DSTest {
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         acuityAtomicSwap.lockValue(hex"1234", hex"1234", hashedSecret, address(this), block.timestamp, 40);
-        acuityAtomicSwap.unlockValue(orderId, secret, block.timestamp);
+        acuityAtomicSwap.unlockByRecipient(orderId, secret, block.timestamp);
     }
 */
 
-    function testUnlockValue() public {
+    function testUnlockValueBySender() public {
         bytes16 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
@@ -335,7 +335,26 @@ contract AcuityAtomicSwapTest is DSTest {
 
         assertEq(address(acuityAtomicSwap).balance, 50);
         uint256 startBalance = address(account0).balance;
-        account0.unlockValue(address(this), secret, timeout);
+        acuityAtomicSwap.unlockBySender(address(account0), secret, timeout);
+        assertEq(acuityAtomicSwap.getLockValue(address(this), address(account0), hashedSecret, timeout), 0);
+        assertEq(address(acuityAtomicSwap).balance, 40);
+        assertEq(address(account0).balance, startBalance + 10);
+    }
+
+    function testUnlockValueByRecipient() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwap.depositStash{value: 50}(assetId);
+        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint256 timeout = block.timestamp + 1000;
+        uint256 value = 10;
+
+        acuityAtomicSwap.lockSell(address(account0), hashedSecret, timeout, hex"1234", value, hex"1234");
+        assertEq(acuityAtomicSwap.getLockValue(address(this), address(account0), hashedSecret, timeout), value);
+
+        assertEq(address(acuityAtomicSwap).balance, 50);
+        uint256 startBalance = address(account0).balance;
+        account0.unlockByRecipient(address(this), secret, timeout);
         assertEq(acuityAtomicSwap.getLockValue(address(this), address(account0), hashedSecret, timeout), 0);
         assertEq(address(acuityAtomicSwap).balance, 40);
         assertEq(address(account0).balance, startBalance + 10);

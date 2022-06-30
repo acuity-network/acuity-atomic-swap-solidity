@@ -61,13 +61,22 @@ contract AcuityAtomicSwap {
     event SellLock(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 lockId, bytes16 buyAssetId, bytes32 buyLockId);
 
     /**
-     * @dev Value has been unlocked.
+     * @dev Value has been unlocked by the sender.
      * @param sender Account that locked the value.
      * @param recipient Account that received the value.
      * @param lockId Intrinisic lockId.
      * @param secret The secret used to unlock the value.
      */
-    event Unlock(address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
+    event UnlockBySender(address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
+
+    /**
+     * @dev Value has been unlocked by the recipient.
+     * @param sender Account that locked the value.
+     * @param recipient Account that received the value.
+     * @param lockId Intrinisic lockId.
+     * @param secret The secret used to unlock the value.
+     */
+    event UnlockByRecipient(address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
 
     /**
      * @dev Value has been timed out.
@@ -290,12 +299,33 @@ contract AcuityAtomicSwap {
     }
 
     /**
-     * @dev Transfer value from lock to receiver.
+     * @dev Transfer value from lock to recipient (called by sender).
+     * @param recipient Recipient of the value.
+     * @param secret Secret to unlock the value.
+     * @param timeout Timeout of the lock.
+     */
+    function unlockBySender(address recipient, bytes32 secret, uint256 timeout) external {
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, keccak256(abi.encodePacked(secret)), timeout));
+        // Check lock has not timed out.
+        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
+        // Get lock value.
+        uint256 value = lockIdValue[lockId];
+        // Delete lock.
+        delete lockIdValue[lockId];
+        // Transfer the value.
+        payable(recipient).transfer(value);
+        // Log info.
+        emit UnlockBySender(msg.sender, recipient, lockId, secret);
+    }
+
+    /**
+     * @dev Transfer value from lock to recipient (called by recipient).
      * @param sender Sender of the value.
      * @param secret Secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function unlockValue(address sender, bytes32 secret, uint256 timeout) external {
+    function unlockByRecipient(address sender, bytes32 secret, uint256 timeout) external {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sender, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
         // Check lock has not timed out.
@@ -307,12 +337,12 @@ contract AcuityAtomicSwap {
         // Transfer the value.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit Unlock(sender, msg.sender, lockId, secret);
+        emit UnlockByRecipient(sender, msg.sender, lockId, secret);
     }
 
     /**
      * @dev Transfer value from lock back to sender's stash.
-     * @param recipient Receiver of the value.
+     * @param recipient Recipient of the value.
      * @param hashedSecret Hash of secret recipient unlock the value.
      * @param timeout Timeout of the lock.
      */
@@ -335,7 +365,7 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev Transfer value from lock back to sender.
-     * @param recipient Receiver of the value.
+     * @param recipient Recipient of the value.
      * @param hashedSecret Hash of secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
