@@ -79,6 +79,14 @@ contract AcuityAtomicSwap {
     event UnlockByRecipient(address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
 
     /**
+     * @dev Lock has been declined by the recipient.
+     * @param sender Account that locked the value.
+     * @param recipient Account to receive the value.
+     * @param lockId Intrinisic lockId.
+     */
+    event DeclineByRecipient(address indexed sender, address indexed recipient, bytes32 lockId);
+
+    /**
      * @dev Value has been timed out.
      * @param sender Account that locked the value.
      * @param recipient Account to receive the value.
@@ -296,6 +304,25 @@ contract AcuityAtomicSwap {
         lockIdValue[lockId] = value;
         // Log info.
         emit SellLock(msg.sender, recipient, hashedSecret, timeout, value, lockId, stashAssetId, buyLockId);
+    }
+
+    /**
+     * @dev Transfer value back to the sender (called by recipient).
+     * @param sender Sender of the value.
+     * @param hashedSecret Hash of the secret.
+     * @param timeout Timeout of the lock.
+     */
+    function declineByRecipient(address sender, bytes32 hashedSecret, uint256 timeout) external {
+        // Calculate lockId.
+        bytes32 lockId = keccak256(abi.encode(sender, msg.sender, hashedSecret, timeout));
+        // Get lock value.
+        uint256 value = lockIdValue[lockId];
+        // Delete lock.
+        delete lockIdValue[lockId];
+        // Transfer the value back to the sender..
+        payable(sender).transfer(value);
+        // Log info.
+        emit DeclineByRecipient(sender, msg.sender, lockId);
     }
 
     /**
