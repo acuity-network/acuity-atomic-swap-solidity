@@ -61,6 +61,14 @@ contract AcuityAtomicSwap {
     event SellLock(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 lockId, bytes16 buyAssetId, bytes32 buyLockId);
 
     /**
+     * @dev Lock has been declined by the recipient.
+     * @param sender Account that locked the value.
+     * @param recipient Account to receive the value.
+     * @param lockId Intrinisic lockId.
+     */
+    event DeclineByRecipient(address indexed sender, address indexed recipient, bytes32 lockId);
+
+    /**
      * @dev Value has been unlocked by the sender.
      * @param sender Account that locked the value.
      * @param recipient Account that received the value.
@@ -77,14 +85,6 @@ contract AcuityAtomicSwap {
      * @param secret The secret used to unlock the value.
      */
     event UnlockByRecipient(address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
-
-    /**
-     * @dev Lock has been declined by the recipient.
-     * @param sender Account that locked the value.
-     * @param recipient Account to receive the value.
-     * @param lockId Intrinisic lockId.
-     */
-    event DeclineByRecipient(address indexed sender, address indexed recipient, bytes32 lockId);
 
     /**
      * @dev Value has been timed out.
@@ -275,7 +275,7 @@ contract AcuityAtomicSwap {
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
-        // Move value into sell lock.
+        // Move value into buy lock.
         lockIdValue[lockId] = msg.value;
         // Log info.
         emit BuyLock(msg.sender, recipient, hashedSecret, timeout, msg.value, lockId, sellAssetId, sellPrice);
@@ -319,7 +319,7 @@ contract AcuityAtomicSwap {
         uint256 value = lockIdValue[lockId];
         // Delete lock.
         delete lockIdValue[lockId];
-        // Transfer the value back to the sender..
+        // Transfer the value back to the sender.
         payable(sender).transfer(value);
         // Log info.
         emit DeclineByRecipient(sender, msg.sender, lockId);
@@ -381,10 +381,10 @@ contract AcuityAtomicSwap {
         // Get lock value;
         uint256 value = lockIdValue[lockId];
         // Ensure lock has value
-        if (lockIdValue[lockId] == 0) revert ZeroValue();
+        if (value == 0) revert ZeroValue();
         // Delete lock.
         delete lockIdValue[lockId];
-        // Return funds and delete lock.
+        // Return funds.
         stashAdd(stashAssetId, value);
         // Log info.
         emit Timeout(msg.sender, recipient, lockId);

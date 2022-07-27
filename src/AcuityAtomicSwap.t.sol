@@ -342,7 +342,6 @@ contract AcuityAtomicSwapTest is DSTest {
     function testDeclineByRecipient() public {
         bytes16 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
-        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint256 timeout = block.timestamp + 1;
         uint256 value = 10;
