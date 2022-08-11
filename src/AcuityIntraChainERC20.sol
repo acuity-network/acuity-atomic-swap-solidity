@@ -20,14 +20,14 @@ contract AcuityIntraChainERC20 {
     /**
      * @dev
      */
-    error TokenTransferFailed();
+    error TokenTransferFailed(address token, address from, address to, uint value);
 
     /**
      * @dev
      */
     function safeTransfer(address token, address to, uint value) internal {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20.transfer.selector, to, value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed();
+        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, address(this), to, value);
     }
 
     /**
@@ -35,7 +35,7 @@ contract AcuityIntraChainERC20 {
      */
     function safeTransferFrom(address token, address from, address to, uint value) internal {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20.transferFrom.selector, from, to, value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed();
+        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, from, to, value);
     }
 
     function encodeOrder(address account, uint96 sellPrice) internal pure returns (bytes32 order) {
