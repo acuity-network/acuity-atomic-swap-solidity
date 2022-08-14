@@ -366,7 +366,7 @@ contract AcuityAtomicSwapERC20 {
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value back to the sender.
-        safeTransfer(token, msg.sender, value);
+        safeTransfer(token, sender, value);
         // Log info.
         emit DeclineByRecipient(token, sender, msg.sender, lockId);
     }
