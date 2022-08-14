@@ -12,3 +12,4 @@ export ETH_RPC_URL=https://rpc-mumbai.maticvigil.com
 . ~/.nix-profile/etc/profile.d/nix.sh
 dapp create AcuityAccount
 dapp create AcuityAtomicSwap
+dapp create AcuityAtomicSwapERC20

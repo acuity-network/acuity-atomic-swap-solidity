@@ -16,3 +16,4 @@ export ETH_PASSWORD=./scripts/password
 export ETH_GAS=2000000
 dapp create AcuityAccount
 dapp create AcuityAtomicSwap
+dapp create AcuityAtomicSwapERC20

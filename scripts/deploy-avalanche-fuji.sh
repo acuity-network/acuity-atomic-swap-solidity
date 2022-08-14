@@ -12,3 +12,4 @@ export ETH_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
 . ~/.nix-profile/etc/profile.d/nix.sh
 dapp create AcuityAccount
 dapp create AcuityAtomicSwap
+dapp create AcuityAtomicSwapERC20
