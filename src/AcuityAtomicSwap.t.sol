@@ -16,11 +16,11 @@ contract AccountProxy {
     receive() payable external {
     }
 
-    function depositStash(bytes16 assetId) payable external {
+    function depositStash(bytes32 assetId) payable external {
         acuityAtomicSwap.depositStash{value: msg.value}(assetId);
     }
 
-    function withdrawStash(bytes16 assetId, uint value) external {
+    function withdrawStash(bytes32 assetId, uint value) external {
         acuityAtomicSwap.withdrawStash(assetId, value);
     }
 
@@ -326,7 +326,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testLockSell() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         uint256 timeout = block.timestamp + 1;
@@ -340,7 +340,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testDeclineByRecipient() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint256 timeout = block.timestamp + 1;
@@ -354,11 +354,11 @@ contract AcuityAtomicSwapTest is DSTest {
         account0.declineByRecipient(address(this), hashedSecret, timeout);
         assertEq(acuityAtomicSwap.getLockValue(address(this), address(account0), hashedSecret, timeout), 0);
         assertEq(address(acuityAtomicSwap).balance, 40);
-        assertEq(address(this).balance, startBalance + 10);
+        assertEq(address(this).balance, startBalance + value);
     }
 
     function testControlUnlockBySenderTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint256 timeout = block.timestamp + 1;
@@ -369,7 +369,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testFailUnlockBySenderTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint256 timeout = block.timestamp;
@@ -380,7 +380,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testUnlockBySender() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -399,7 +399,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testControlUnlockByRecipientTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint256 timeout = block.timestamp + 1;
@@ -410,7 +410,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testFailUnlockByRecipientTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint256 timeout = block.timestamp;
@@ -421,7 +421,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testUnlockByRecipient() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -440,7 +440,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testControlTimeoutStashNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -451,7 +451,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testFailTimeoutStashNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -462,7 +462,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testControlTimeoutStashZeroValue() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -473,7 +473,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testFailTimeoutStashZeroValue() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -484,7 +484,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testTimeoutStash() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
         assertEq(acuityAtomicSwap.getStashValue(assetId, address(this)), 50);
 
@@ -511,7 +511,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testControlTimeoutValueNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -522,7 +522,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testFailTimeoutValueNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -533,7 +533,7 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testTimeoutValue() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwap.depositStash{value: 50}(assetId);
         assertEq(acuityAtomicSwap.getStashValue(assetId, address(this)), 50);
 
