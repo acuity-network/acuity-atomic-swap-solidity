@@ -284,7 +284,13 @@ contract AcuityAtomicSwapTest is DSTest {
     }
 
     function testLockBuy() public {
-        acuityAtomicSwap.lockBuy{value: 1}(address(account0), hex"1234", block.timestamp + 1, hex"1234", 1);
+        bytes32 secret = hex"1234";
+        bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+        uint256 timeout = block.timestamp + 1;
+        uint256 value = 10;
+
+        acuityAtomicSwap.lockBuy{value: value}(address(account0), hashedSecret, timeout, hex"1234", 1);
+        assertEq(acuityAtomicSwap.getLockValue(address(this), address(account0), hashedSecret, timeout), value);
     }
 
     function testControlLockZeroValue() public {

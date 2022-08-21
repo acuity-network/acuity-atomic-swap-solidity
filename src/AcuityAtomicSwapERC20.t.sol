@@ -321,7 +321,13 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testLockBuy() public {
-        acuityAtomicSwapERC20.lockBuy(address(dummyToken), address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, 1);
+        bytes32 secret = hex"1234";
+        bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+        uint256 timeout = block.timestamp + 1;
+        uint256 value = 10;
+
+        acuityAtomicSwapERC20.lockBuy(address(dummyToken), address(account0), hashedSecret, timeout, hex"1234", 1, value);
+        assertEq(acuityAtomicSwapERC20.getLockValue(address(dummyToken), address(this), address(account0), hashedSecret, timeout), value);
     }
 
     function testControlLockZeroValue() public {
