@@ -167,19 +167,24 @@ contract AcuityAtomicSwapERC20 {
         mapping (address => address) storage accountLL = tokenAssetIdAccountLL[token][assetId];
         mapping (address => uint) storage accountValue = tokenAssetIdAccountValue[token][assetId];
         // Get new total.
-        uint total = accountValue[msg.sender] + value;
+        uint currentValue = accountValue[msg.sender];
+        uint total = currentValue + value;
         // Search for new previous.
         address prev = address(0);
-        while (accountValue[accountLL[prev]] >= total) {
-            prev = accountLL[prev];
+        address next = accountLL[prev];
+        while (accountValue[next] >= total) {
+            prev = next;
+            next = accountLL[prev];
         }
         bool replace = false;
         // Is sender already in the list?
-        if (accountValue[msg.sender] > 0) {
+        if (currentValue > 0) {
             // Search for old previous.
             address oldPrev = address(0);
-            while (accountLL[oldPrev] != msg.sender) {
-                oldPrev = accountLL[oldPrev];
+            address oldNext = accountLL[oldPrev];
+            while (oldNext != msg.sender) {
+                oldPrev = oldNext;
+                oldNext = accountLL[oldPrev];
             }
             // Is it in the same position?
             if (prev == oldPrev) {
@@ -192,7 +197,7 @@ contract AcuityAtomicSwapERC20 {
         }
         if (!replace) {
             // Insert into linked list.
-            accountLL[msg.sender] = accountLL[prev];
+            accountLL[msg.sender] = next;
             accountLL[prev] = msg.sender;
         }
         // Update the value deposited.
@@ -214,22 +219,26 @@ contract AcuityAtomicSwapERC20 {
         uint total = accountValue[msg.sender] - value;
         // Search for old previous.
         address oldPrev = address(0);
-        while (accountLL[oldPrev] != msg.sender) {
-            oldPrev = accountLL[oldPrev];
+        address oldNext = accountLL[oldPrev];
+        while (oldNext != msg.sender) {
+            oldPrev = oldNext;
+            oldNext = accountLL[oldPrev];
         }
         // Is there still a stash?
         if (total > 0) {
             // Search for new previous.
             address prev = address(0);
-            while (accountValue[accountLL[prev]] >= total) {
-                prev = accountLL[prev];
+            address next = accountLL[prev];
+            while (accountValue[next] >= total) {
+                prev = next;
+                next = accountLL[prev];
             }
             // Is it in a new position?
             if (prev != msg.sender) {
                 // Remove sender from old position.
                 accountLL[oldPrev] = accountLL[msg.sender];
                 // Insert into new position.
-                accountLL[msg.sender] = accountLL[prev];
+                accountLL[msg.sender] = next;
                 accountLL[prev] = msg.sender;
             }
         }
@@ -472,30 +481,30 @@ contract AcuityAtomicSwapERC20 {
         mapping (address => address) storage accountLL = tokenAssetIdAccountLL[token][assetId];
         mapping (address => uint) storage accountValue = tokenAssetIdAccountValue[token][assetId];
         // Find first account after offset.
-        address start = address(0);
+        address account = address(0);
+        address next = accountLL[account];
         while (offset > 0) {
-          if (accountLL[start] == address(0)) {
-            break;
-          }
-          start = accountLL[start];
-          offset--;
+            if (next == address(0)) {
+                break;
+            }
+            account = next;
+            next = accountLL[account];
+            offset--;
         }
         // Count how many accounts to return.
-        address account = start;
         uint _limit = 0;
-        while (accountLL[account] != address(0) && _limit < limit) {
-            account = accountLL[account];
+        while (next != address(0) && _limit < limit) {
+            next = accountLL[next];
             _limit++;
         }
         // Allocate the arrays.
         accounts = new address[](_limit);
         values = new uint[](_limit);
         // Populate the array.
-        account = accountLL[start];
         for (uint i = 0; i < _limit; i++) {
+            account = accountLL[account];
             accounts[i] = account;
             values[i] = accountValue[account];
-            account = accountLL[account];
         }
     }
 

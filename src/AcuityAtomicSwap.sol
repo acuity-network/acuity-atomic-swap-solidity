@@ -6,7 +6,7 @@ contract AcuityAtomicSwap {
     /**
      * @dev Mapping of assetId to linked list of accounts, starting with the largest.
      */
-    mapping (bytes32 => mapping (address => address)) stashAssetIdAccountsLL;
+    mapping (bytes32 => mapping (address => address)) stashAssetIdAccountLL;
 
     /**
      * @dev Mapping of assetId to selling address to value.
@@ -131,22 +131,27 @@ contract AcuityAtomicSwap {
      * @param value Size of deposit to add. Must be greater than 0.
      */
     function stashAdd(bytes32 assetId, uint value) internal {
-        mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
+        mapping (address => address) storage accountLL = stashAssetIdAccountLL[assetId];
         mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
         // Get new total.
-        uint total = accountValue[msg.sender] + value;
+        uint currentValue = accountValue[msg.sender];
+        uint total = currentValue + value;
         // Search for new previous.
         address prev = address(0);
-        while (accountValue[accountsLL[prev]] >= total) {
-            prev = accountsLL[prev];
+        address next = accountLL[prev];
+        while (accountValue[next] >= total) {
+            prev = next;
+            next = accountLL[prev];
         }
         bool replace = false;
         // Is sender already in the list?
-        if (accountValue[msg.sender] > 0) {
+        if (currentValue > 0) {
             // Search for old previous.
             address oldPrev = address(0);
-            while (accountsLL[oldPrev] != msg.sender) {
-                oldPrev = accountsLL[oldPrev];
+            address oldNext = accountLL[oldPrev];
+            while (oldNext != msg.sender) {
+                oldPrev = oldNext;
+                oldNext = accountLL[oldPrev];
             }
             // Is it in the same position?
             if (prev == oldPrev) {
@@ -154,13 +159,13 @@ contract AcuityAtomicSwap {
             }
             else {
                 // Remove sender from current position.
-                accountsLL[oldPrev] = accountsLL[msg.sender];
+                accountLL[oldPrev] = accountLL[msg.sender];
             }
         }
         if (!replace) {
             // Insert into linked list.
-            accountsLL[msg.sender] = accountsLL[prev];
-            accountsLL[prev] = msg.sender;
+            accountLL[msg.sender] = next;
+            accountLL[prev] = msg.sender;
         }
         // Update the value deposited.
         accountValue[msg.sender] = total;
@@ -174,34 +179,38 @@ contract AcuityAtomicSwap {
      * @param value Size of deposit to remove. Must be bigger than or equal to deposit value.
      */
     function stashRemove(bytes32 assetId, uint value) internal {
-        mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
+        mapping (address => address) storage accountLL = stashAssetIdAccountLL[assetId];
         mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
         // Get new total.
         uint total = accountValue[msg.sender] - value;
         // Search for old previous.
         address oldPrev = address(0);
-        while (accountsLL[oldPrev] != msg.sender) {
-            oldPrev = accountsLL[oldPrev];
+        address oldNext = accountLL[oldPrev];
+        while (oldNext != msg.sender) {
+            oldPrev = oldNext;
+            oldNext = accountLL[oldPrev];
         }
         // Is there still a stash?
         if (total > 0) {
             // Search for new previous.
             address prev = address(0);
-            while (accountValue[accountsLL[prev]] >= total) {
-                prev = accountsLL[prev];
+            address next = accountLL[prev];
+            while (accountValue[next] >= total) {
+                prev = next;
+                next = accountLL[prev];
             }
             // Is it in a new position?
             if (prev != msg.sender) {
                 // Remove sender from old position.
-                accountsLL[oldPrev] = accountsLL[msg.sender];
+                accountLL[oldPrev] = accountLL[msg.sender];
                 // Insert into new position.
-                accountsLL[msg.sender] = accountsLL[prev];
-                accountsLL[prev] = msg.sender;
+                accountLL[msg.sender] = next;
+                accountLL[prev] = msg.sender;
             }
         }
         else {
             // Remove sender from list.
-            accountsLL[oldPrev] = accountsLL[msg.sender];
+            accountLL[oldPrev] = accountLL[msg.sender];
         }
         // Update the value deposited.
         accountValue[msg.sender] = total;
@@ -418,33 +427,33 @@ contract AcuityAtomicSwap {
      * @param limit Maximum number of deposits to return.
      */
     function getStashes(bytes32 assetId, uint offset, uint limit) view external returns (address[] memory accounts, uint[] memory values) {
-        mapping (address => address) storage accountsLL = stashAssetIdAccountsLL[assetId];
+        mapping (address => address) storage accountLL = stashAssetIdAccountLL[assetId];
         mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
         // Find first account after offset.
-        address start = address(0);
+        address account = address(0);
+        address next = accountLL[account];
         while (offset > 0) {
-          if (accountsLL[start] == address(0)) {
-            break;
-          }
-          start = accountsLL[start];
-          offset--;
+            if (next == address(0)) {
+                break;
+            }
+            account = next;
+            next = accountLL[account];
+            offset--;
         }
         // Count how many accounts to return.
-        address account = start;
         uint _limit = 0;
-        while (accountsLL[account] != address(0) && _limit < limit) {
-            account = accountsLL[account];
+        while (next != address(0) && _limit < limit) {
+            next = accountLL[next];
             _limit++;
         }
         // Allocate the arrays.
         accounts = new address[](_limit);
         values = new uint[](_limit);
         // Populate the array.
-        account = accountsLL[start];
         for (uint i = 0; i < _limit; i++) {
+            account = accountLL[account];
             accounts[i] = account;
             values[i] = accountValue[account];
-            account = accountsLL[account];
         }
     }
 
