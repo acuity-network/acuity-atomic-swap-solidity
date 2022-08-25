@@ -180,8 +180,8 @@ contract AcuityAtomicSwapERC20 {
         // Is sender already in the list?
         if (currentValue > 0) {
             // Search for old previous.
-            address oldPrev = address(0);
-            address oldNext = accountLL[oldPrev];
+            address oldPrev = prev;
+            address oldNext = next;
             while (oldNext != msg.sender) {
                 oldPrev = oldNext;
                 oldNext = accountLL[oldPrev];
@@ -227,8 +227,8 @@ contract AcuityAtomicSwapERC20 {
         // Is there still a stash?
         if (total > 0) {
             // Search for new previous.
-            address prev = address(0);
-            address next = accountLL[prev];
+            address prev = oldPrev;
+            address next = oldNext;
             while (accountValue[next] >= total) {
                 prev = next;
                 next = accountLL[prev];
