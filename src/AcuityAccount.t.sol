@@ -16,18 +16,18 @@ contract AcuityAccountTest is DSTest {
         acuityAccount.setAcuAccount(hex"1234");
     }
 
-    function testSetHotAccount() public {
-        acuityAccount.setHotAccount(address(0x2345));
-        assertEq(acuityAccount.getHotAccount(address(this)), address(0x2345));
+    function testSetProxyAccount() public {
+        acuityAccount.setProxyAccount(address(0x2345));
+        assertEq(acuityAccount.getProxyAccount(address(this)), address(0x2345));
     }
 
     function testGetAccounts() public {
         acuityAccount.setAcuAccount(hex"1234");
-        acuityAccount.setHotAccount(address(0x2345));
+        acuityAccount.setProxyAccount(address(0x2345));
 
-        (bytes32 acuAccount, address hotAccount) = acuityAccount.getAccounts(address(this));
+        (bytes32 acuAccount, address proxyAccount) = acuityAccount.getAccounts(address(this));
         assertEq(acuAccount, hex"1234");
-        assertEq(hotAccount, address(0x2345));
+        assertEq(proxyAccount, address(0x2345));
     }
 
 }

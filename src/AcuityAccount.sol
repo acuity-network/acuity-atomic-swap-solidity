@@ -9,9 +9,9 @@ contract AcuityAccount {
     mapping (address => bytes32) accountAcuAccount;
 
     /**
-     * @dev Mapping of account to hot account.
+     * @dev Mapping of account to proxy account.
      */
-    mapping (address => address) accountHotAccount;
+    mapping (address => address) accountProxyAccount;
 
     /**
      * @dev ACU account has been set for an account.
@@ -21,28 +21,32 @@ contract AcuityAccount {
     event AcuAccountSet(address indexed account, bytes32 indexed acuAccount);
 
     /**
-     * @dev Hot account has been set for an account.
-     * @param account Account that has set its Hot account.
-     * @param hotAccount Hot account that has been set for account.
+     * @dev Proxy account has been set for an account.
+     * @param account Account that has set its Proxy account.
+     * @param proxyAccount Proxy account that has been set for account.
      */
-    event HotAccountSet(address indexed account, address indexed hotAccount);
+    event ProxyAccountSet(address indexed account, address indexed proxyAccount);
 
     /**
      * @dev Set Acu account for sender.
      * @param acuAccount ACU account to set for sender.
      */
-    function setAcuAccount(bytes32 acuAccount) external {
+    function setAcuAccount(bytes32 acuAccount)
+        external
+    {
         accountAcuAccount[msg.sender] = acuAccount;
         emit AcuAccountSet(msg.sender, acuAccount);
     }
 
     /**
-     * @dev Set hot account for sender.
-     * @param hotAccount Hot account to set for sender.
+     * @dev Set proxy account for sender.
+     * @param proxyAccount Proxy account to set for sender.
      */
-    function setHotAccount(address hotAccount) external {
-        accountHotAccount[msg.sender] = hotAccount;
-        emit HotAccountSet(msg.sender, hotAccount);
+    function setProxyAccount(address proxyAccount)
+        external
+    {
+        accountProxyAccount[msg.sender] = proxyAccount;
+        emit ProxyAccountSet(msg.sender, proxyAccount);
     }
 
     /**
@@ -50,28 +54,40 @@ contract AcuityAccount {
      * @param account Account to get ACU account for.
      * @return acuAccount ACU account for account.
      */
-    function getAcuAccount(address account) view external returns (bytes32 acuAccount) {
+    function getAcuAccount(address account)
+        external
+        view
+        returns (bytes32 acuAccount)
+    {
         acuAccount = accountAcuAccount[account];
     }
 
     /**
-     * @dev Get hot account for account.
-     * @param account Account to get hot account for.
-     * @return hotAccount Hot account for account.
+     * @dev Get proxy account for account.
+     * @param account Account to get proxy account for.
+     * @return proxyAccount Proxy account for account.
      */
-    function getHotAccount(address account) view external returns (address hotAccount) {
-        hotAccount = accountHotAccount[account];
+    function getProxyAccount(address account)
+        external
+        view
+        returns (address proxyAccount)
+    {
+        proxyAccount = accountProxyAccount[account];
     }
 
     /**
      * @dev Get accounts for account.
      * @param account Account to get accounts for.
      * @return acuAccount ACU account for account.
-     * @return hotAccount Hot account for account.
+     * @return proxyAccount Proxy account for account.
      */
-    function getAccounts(address account) view external returns (bytes32 acuAccount, address hotAccount) {
+    function getAccounts(address account)
+        external
+        view
+        returns (bytes32 acuAccount, address proxyAccount)
+    {
         acuAccount = accountAcuAccount[account];
-        hotAccount = accountHotAccount[account];
+        proxyAccount = accountProxyAccount[account];
     }
 
 }
