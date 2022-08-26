@@ -34,6 +34,7 @@ contract AccountProxy {
 }
 
 contract AcuityAtomicSwapTest is DSTest {
+    AcuityAccount acuityAccount;
     AcuityAtomicSwap acuityAtomicSwap;
     AccountProxy account0;
     AccountProxy account1;
@@ -43,7 +44,8 @@ contract AcuityAtomicSwapTest is DSTest {
     receive() external payable {}
 
     function setUp() public {
-        acuityAtomicSwap = new AcuityAtomicSwap();
+        acuityAccount = new AcuityAccount();
+        acuityAtomicSwap = new AcuityAtomicSwap(acuityAccount);
         account0 = new AccountProxy(acuityAtomicSwap);
         account1 = new AccountProxy(acuityAtomicSwap);
         account2 = new AccountProxy(acuityAtomicSwap);

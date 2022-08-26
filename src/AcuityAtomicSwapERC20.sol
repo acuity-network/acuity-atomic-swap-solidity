@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.15;
 
+import "./AcuityAccount.sol";
 import "./ERC20.sol";
 
 contract AcuityAtomicSwapERC20 {
+
+    /**
+     * @dev Address of AcuityAccount contract.
+     */
+    AcuityAccount public acuityAccount;
 
     /**
      * @dev Mapping of sell token address to buy assetId to linked list of accounts, starting with the largest.
@@ -140,6 +146,13 @@ contract AcuityAtomicSwapERC20 {
      * @dev
      */
     error TokenTransferFailed(address token, address from, address to, uint value);
+
+    /**
+     * @param _acuityAccount Address of AcuityAccount contract.
+     */
+    constructor (AcuityAccount _acuityAccount) {
+        acuityAccount = _acuityAccount;
+    }
 
     /**
      * @dev

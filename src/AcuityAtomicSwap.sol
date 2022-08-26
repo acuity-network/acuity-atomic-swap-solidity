@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.15;
 
+import "./AcuityAccount.sol";
+
 contract AcuityAtomicSwap {
+
+    /**
+     * @dev Address of AcuityAccount contract.
+     */
+    AcuityAccount public acuityAccount;
 
     /**
      * @dev Mapping of assetId to linked list of accounts, starting with the largest.
@@ -124,6 +131,13 @@ contract AcuityAtomicSwap {
      * @param lockId Lock not timed out.
      */
     error LockNotTimedOut(bytes32 lockId);
+
+    /**
+     * @param _acuityAccount Address of AcuityAccount contract.
+     */
+    constructor (AcuityAccount _acuityAccount) {
+        acuityAccount = _acuityAccount;
+    }
 
     /**
      * @dev Add value to stash be sold for a specific asset.

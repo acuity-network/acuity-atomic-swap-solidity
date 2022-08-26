@@ -62,6 +62,7 @@ contract DummyToken is ERC20 {
 }
 
 contract AcuityAtomicSwapERC20Test is DSTest {
+    AcuityAccount acuityAccount;
     AcuityAtomicSwapERC20 acuityAtomicSwapERC20;
     DummyToken dummyToken;
     AccountProxy account0;
@@ -72,7 +73,8 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     receive() external payable {}
 
     function setUp() public {
-        acuityAtomicSwapERC20 = new AcuityAtomicSwapERC20();
+        acuityAccount = new AcuityAccount();
+        acuityAtomicSwapERC20 = new AcuityAtomicSwapERC20(acuityAccount);
         account0 = new AccountProxy(acuityAtomicSwapERC20);
         account1 = new AccountProxy(acuityAtomicSwapERC20);
         account2 = new AccountProxy(acuityAtomicSwapERC20);
