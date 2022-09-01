@@ -553,7 +553,7 @@ contract AcuityAtomicSwapERC20 {
         bytes32 lockId = keccak256(abi.encode(token, msg.sender, recipient, hashedSecret, timeout));
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
-        // Get lock value;
+        // Get lock value.
         uint256 value = lockIdValue[lockId];
         // Ensure lock has value
         if (value == 0) revert ZeroValue();
@@ -581,7 +581,7 @@ contract AcuityAtomicSwapERC20 {
         bytes32 lockId = keccak256(abi.encode(token, sender, recipient, hashedSecret, timeout));
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
-        // Get lock value;
+        // Get lock value.
         uint256 value = lockIdValue[lockId];
         // Ensure lock has value
         if (value == 0) revert ZeroValue();
@@ -607,7 +607,7 @@ contract AcuityAtomicSwapERC20 {
         bytes32 lockId = keccak256(abi.encode(token, msg.sender, recipient, hashedSecret, timeout));
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
-        // Get lock value;
+        // Get lock value.
         uint256 value = lockIdValue[lockId];
         // Delete lock.
         delete lockIdValue[lockId];
@@ -633,7 +633,7 @@ contract AcuityAtomicSwapERC20 {
         bytes32 lockId = keccak256(abi.encode(token, sender, recipient, hashedSecret, timeout));
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
-        // Get lock value;
+        // Get lock value.
         uint256 value = lockIdValue[lockId];
         // Delete lock.
         delete lockIdValue[lockId];
