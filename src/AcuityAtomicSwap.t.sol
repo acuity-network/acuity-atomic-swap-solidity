@@ -30,6 +30,10 @@ contract AccountProxy {
         acuityAtomicSwap.withdrawStash(assetId, value);
     }
 
+    function withdrawStashAll(bytes32 assetId) external {
+        acuityAtomicSwap.withdrawStashAll(assetId);
+    }
+
     function lockSellProxy(address sender, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
         external
     {
@@ -304,6 +308,111 @@ contract AcuityAtomicSwapTest is DSTest {
 
         startBalance = address(account1).balance;
         account1.withdrawStash(hex"1234", 40);
+        assertEq(startBalance + 40, address(account1).balance);
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 0);
+        assertEq(values.length, 0);
+    }
+
+    function testWithdrawStashAll() public {
+        (address[] memory accounts, uint[] memory values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 0);
+        assertEq(values.length, 0);
+
+        account0.depositStash{value: 50}(hex"1234");
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account0));
+        assertEq(values[0], 50);
+
+        uint startBalance = address(account0).balance;
+        account0.withdrawStashAll(hex"1234");
+        assertEq(startBalance + 50, address(account0).balance);
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 0);
+        assertEq(values.length, 0);
+
+        account1.depositStash{value: 40}(hex"1234");
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account1));
+        assertEq(values[0], 40);
+
+        account2.depositStash{value: 60}(hex"1234");
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account2));
+        assertEq(values[0], 60);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        account3.depositStash{value: 45}(hex"1234");
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 3);
+        assertEq(values.length, 3);
+        assertEq(accounts[0], address(account2));
+        assertEq(values[0], 60);
+        assertEq(accounts[1], address(account3));
+        assertEq(values[1], 45);
+        assertEq(accounts[2], address(account1));
+        assertEq(values[2], 40);
+
+        startBalance = address(account2).balance;
+        account2.withdrawStashAll(hex"1234");
+        assertEq(startBalance + 60, address(account2).balance);
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account3));
+        assertEq(values[0], 45);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        startBalance = address(account0).balance;
+        account0.withdrawStashAll(hex"1234");
+        assertEq(startBalance, address(account0).balance);
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account3));
+        assertEq(values[0], 45);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        startBalance = address(account2).balance;
+        account2.withdrawStashAll(hex"1234");
+        assertEq(startBalance, address(account2).balance);
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account3));
+        assertEq(values[0], 45);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        startBalance = address(account3).balance;
+        account3.withdrawStashAll(hex"1234");
+        assertEq(startBalance + 45, address(account3).balance);
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account1));
+        assertEq(values[0], 40);
+
+        startBalance = address(account0).balance;
+        account0.withdrawStashAll(hex"1234");
+        assertEq(startBalance, address(account0).balance);
+        (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account1));
+        assertEq(values[0], 40);
+
+        startBalance = address(account1).balance;
+        account1.withdrawStashAll(hex"1234");
         assertEq(startBalance + 40, address(account1).balance);
         (accounts, values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
         assertEq(accounts.length, 0);

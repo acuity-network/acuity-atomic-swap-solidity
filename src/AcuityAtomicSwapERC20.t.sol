@@ -29,6 +29,10 @@ contract AccountProxy {
         acuityAtomicSwapERC20.withdrawStash(sellToken, assetId, value);
     }
 
+    function withdrawStashAll(address sellToken, bytes32 assetId) external {
+        acuityAtomicSwapERC20.withdrawStashAll(sellToken, assetId);
+    }
+
     function lockSellProxy(address sellToken, address sender, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
         external
     {
@@ -345,6 +349,111 @@ contract AcuityAtomicSwapERC20Test is DSTest {
 
         startBalance = dummyToken.balanceOf(address(account1));
         account1.withdrawStash(address(dummyToken), hex"1234", 40);
+        assertEq(startBalance + 40, dummyToken.balanceOf(address(account1)));
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 0);
+        assertEq(values.length, 0);
+    }
+
+    function testWithdrawStashAll() public {
+        (address[] memory accounts, uint[] memory values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 0);
+        assertEq(values.length, 0);
+
+        account0.depositStash(address(dummyToken), hex"1234", 50);
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account0));
+        assertEq(values[0], 50);
+
+        uint startBalance = dummyToken.balanceOf(address(account0));
+        account0.withdrawStashAll(address(dummyToken), hex"1234");
+        assertEq(startBalance + 50, dummyToken.balanceOf(address(account0)));
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 0);
+        assertEq(values.length, 0);
+
+        account1.depositStash(address(dummyToken), hex"1234", 40);
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account1));
+        assertEq(values[0], 40);
+
+        account2.depositStash(address(dummyToken), hex"1234", 60);
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account2));
+        assertEq(values[0], 60);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        account3.depositStash(address(dummyToken), hex"1234", 45);
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 3);
+        assertEq(values.length, 3);
+        assertEq(accounts[0], address(account2));
+        assertEq(values[0], 60);
+        assertEq(accounts[1], address(account3));
+        assertEq(values[1], 45);
+        assertEq(accounts[2], address(account1));
+        assertEq(values[2], 40);
+
+        startBalance = dummyToken.balanceOf(address(account2));
+        account2.withdrawStashAll(address(dummyToken), hex"1234");
+        assertEq(startBalance + 60, dummyToken.balanceOf(address(account2)));
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account3));
+        assertEq(values[0], 45);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        startBalance = dummyToken.balanceOf(address(account0));
+        account0.withdrawStashAll(address(dummyToken), hex"1234");
+        assertEq(startBalance, dummyToken.balanceOf(address(account0)));
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account3));
+        assertEq(values[0], 45);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        startBalance = dummyToken.balanceOf(address(account2));
+        account2.withdrawStashAll(address(dummyToken), hex"1234");
+        assertEq(startBalance, dummyToken.balanceOf(address(account2)));
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 2);
+        assertEq(values.length, 2);
+        assertEq(accounts[0], address(account3));
+        assertEq(values[0], 45);
+        assertEq(accounts[1], address(account1));
+        assertEq(values[1], 40);
+
+        startBalance = dummyToken.balanceOf(address(account3));
+        account3.withdrawStashAll(address(dummyToken), hex"1234");
+        assertEq(startBalance + 45, dummyToken.balanceOf(address(account3)));
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account1));
+        assertEq(values[0], 40);
+
+        startBalance = dummyToken.balanceOf(address(account0));
+        account0.withdrawStashAll(address(dummyToken), hex"1234");
+        assertEq(startBalance, dummyToken.balanceOf(address(account0)));
+        (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
+        assertEq(accounts.length, 1);
+        assertEq(values.length, 1);
+        assertEq(accounts[0], address(account1));
+        assertEq(values[0], 40);
+
+        startBalance = dummyToken.balanceOf(address(account1));
+        account1.withdrawStashAll(address(dummyToken), hex"1234");
         assertEq(startBalance + 40, dummyToken.balanceOf(address(account1)));
         (accounts, values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
         assertEq(accounts.length, 0);

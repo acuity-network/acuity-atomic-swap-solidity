@@ -303,14 +303,30 @@ contract AcuityAtomicSwap {
      * @dev Withdraw all value from a stash.
      * @param assetId Asset the stash is to be sold for.
      */
-    function withdrawStash(bytes32 assetId)
+    function withdrawStashAll(bytes32 assetId)
         external
     {
-        uint value = stashAssetIdAccountValue[assetId][msg.sender];
-        // Remove the deposit.
-        stashRemove(msg.sender, assetId, value);
+        // Get stash value.
+        mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
+        uint value = accountValue[msg.sender];
+        // Ensure lock has value
+        if (value == 0) return;
+        // Search for previous.
+        mapping (address => address) storage accountLL = stashAssetIdAccountLL[assetId];
+        address prev = address(0);
+        address next = accountLL[prev];
+        while (next != msg.sender) {
+            prev = next;
+            next = accountLL[prev];
+        }
+        // Remove sender from list.
+        accountLL[prev] = accountLL[msg.sender];
+        // Update the stash value.
+        delete accountValue[msg.sender];
         // Send the funds back.
         payable(msg.sender).transfer(value);
+        // Log info.
+        emit StashRemove(msg.sender, assetId, value);
     }
 
     /**

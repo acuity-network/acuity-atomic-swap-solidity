@@ -345,14 +345,30 @@ contract AcuityAtomicSwapERC20 {
      * @param sellToken Address of sell token.
      * @param assetId Asset the stash is to be sold for.
      */
-    function withdrawStash(address sellToken, bytes32 assetId)
+    function withdrawStashAll(address sellToken, bytes32 assetId)
         external
     {
-        uint value = tokenAssetIdAccountValue[sellToken][assetId][msg.sender];
-        // Remove the deposit.
-        stashRemove(sellToken, msg.sender, assetId, value);
+        // Get stash value.
+        mapping (address => uint) storage accountValue = tokenAssetIdAccountValue[sellToken][assetId];
+        uint value = accountValue[msg.sender];
+        // Ensure lock has value
+        if (value == 0) return;
+        // Search for previous.
+        mapping (address => address) storage accountLL = tokenAssetIdAccountLL[sellToken][assetId];
+        address prev = address(0);
+        address next = accountLL[prev];
+        while (next != msg.sender) {
+            prev = next;
+            next = accountLL[prev];
+        }
+        // Remove sender from list.
+        accountLL[prev] = accountLL[msg.sender];
+        // Update the stash value.
+        delete accountValue[msg.sender];
         // Send the funds back.
         safeTransfer(sellToken, msg.sender, value);
+        // Log info.
+        emit StashRemove(sellToken, msg.sender, assetId, value);
     }
 
     /**
