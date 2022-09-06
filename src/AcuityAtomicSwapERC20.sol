@@ -188,7 +188,7 @@ contract AcuityAtomicSwapERC20 {
      * @param token Address of sell token.
      * @param account Account to add stash for.
      * @param assetId Asset the stash is to be sold for.
-     * @param value Size of deposit to add. Must be greater than 0.
+     * @param value Size of deposit to add. 0 will result in corrupted state.
      */
     function stashAdd(address token, address account, bytes32 assetId, uint value)
         internal
@@ -239,7 +239,7 @@ contract AcuityAtomicSwapERC20 {
      * @param token Address of sell token.
      * @param account Account to add stash for.
      * @param assetId Asset the stash is to be sold for.
-     * @param value Size of deposit to remove. Must be bigger than or equal to deposit value.
+     * @param value Size of deposit to remove. Will revert if bigger than or equal to deposit value.
      */
     function stashRemove(address token, address account, bytes32 assetId, uint value)
         internal
