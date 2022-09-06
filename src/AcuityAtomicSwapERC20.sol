@@ -9,7 +9,7 @@ contract AcuityAtomicSwapERC20 {
     /**
      * @dev Address of AcuityAccount contract.
      */
-    AcuityAccount public acuityAccount;
+    AcuityAccount public immutable acuityAccount;
 
     /**
      * @dev Mapping of sell token address to buy assetId to linked list of accounts, starting with the largest.
