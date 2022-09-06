@@ -15,7 +15,7 @@ contract AcuityIntraChainERC20 {
      */
     mapping (address => mapping (address => mapping (bytes32 => bytes32))) sellBuyOrderLL;
 
-    mapping (address => mapping (address => mapping (bytes32 => uint256))) sellBuyOrderValue;
+    mapping (address => mapping (address => mapping (bytes32 => uint))) sellBuyOrderValue;
 
     /**
      * @dev
@@ -52,7 +52,7 @@ contract AcuityIntraChainERC20 {
         bytes32 order = encodeOrder(msg.sender, sellPrice);
 
         mapping (bytes32 => bytes32) storage orderLL = sellBuyOrderLL[sellToken][buyToken];
-        mapping (bytes32 => uint256) storage orderValue = sellBuyOrderValue[sellToken][buyToken];
+        mapping (bytes32 => uint) storage orderValue = sellBuyOrderValue[sellToken][buyToken];
 
         // Does this order already exist?
         if (orderValue[order] > 0) {
@@ -91,7 +91,7 @@ contract AcuityIntraChainERC20 {
         // Linked list of sell orders for this pair, starting with the lowest price.
         mapping (bytes32 => bytes32) storage orderLL = sellBuyOrderLL[sellToken][buyToken];
         // Sell value of each sell order for this pair.
-        mapping (bytes32 => uint256) storage orderValue = sellBuyOrderValue[sellToken][buyToken];
+        mapping (bytes32 => uint) storage orderValue = sellBuyOrderValue[sellToken][buyToken];
         // Accumulator of how much of the sell token the buyer will receive.
         uint sellValue = 0;
         // Get the lowest sell order.

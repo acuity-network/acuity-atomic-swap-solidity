@@ -24,7 +24,7 @@ contract AcuityAtomicSwapERC20 {
     /**
      * @dev Mapping of lockId to value stored in the lock.
      */
-    mapping (bytes32 => uint256) lockIdValue;
+    mapping (bytes32 => uint) lockIdValue;
 
     /**
      * @dev Value has been added to a stash.
@@ -33,7 +33,7 @@ contract AcuityAtomicSwapERC20 {
      * @param assetId Asset the stash is to be sold for.
      * @param value How much value has been added to the stash.
      */
-    event StashAdd(address indexed token, address indexed account, bytes32 indexed assetId, uint256 value);
+    event StashAdd(address indexed token, address indexed account, bytes32 indexed assetId, uint value);
 
     /**
      * @dev Value has been removed from a stash.
@@ -42,7 +42,7 @@ contract AcuityAtomicSwapERC20 {
      * @param assetId Asset the stash is to be sold for.
      * @param value How much value has been removed from the stash.
      */
-    event StashRemove(address indexed token, address indexed account, bytes32 indexed assetId, uint256 value);
+    event StashRemove(address indexed token, address indexed account, bytes32 indexed assetId, uint value);
 
     /**
      * @dev Value has been locked with sell asset info.
@@ -56,7 +56,7 @@ contract AcuityAtomicSwapERC20 {
      * @param sellAssetId assetId the value is paying for.
      * @param sellPrice Price the asset is being sold for.
      */
-    event BuyLock(address indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 lockId, bytes32 sellAssetId, uint256 sellPrice);
+    event BuyLock(address indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice);
 
     /**
      * @dev Value has been locked.
@@ -70,7 +70,7 @@ contract AcuityAtomicSwapERC20 {
      * @param buyAssetId The asset of the buy lock this lock is responding to.
      * @param buyLockId The buy lock this lock is responding to.
      */
-    event SellLock(address indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint256 timeout, uint256 value, bytes32 lockId, bytes32 buyAssetId, bytes32 buyLockId);
+    event SellLock(address indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 buyAssetId, bytes32 buyLockId);
 
     /**
      * @dev Lock has been declined by the recipient.
@@ -355,7 +355,7 @@ contract AcuityAtomicSwapERC20 {
      * @param sellPrice Price the asset is being sold for.
      * @param value Value of token to lock.
      */
-    function lockBuy(address token, address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 sellAssetId, uint256 sellPrice, uint value)
+    function lockBuy(address token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, uint value)
         external
     {
         // Ensure value is nonzero.
@@ -381,7 +381,7 @@ contract AcuityAtomicSwapERC20 {
      * @param value Value from the stash to lock.
      * @param buyLockId The buy lock this lock is responding to.
      */
-    function lockSell(address sellToken, address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 stashAssetId, uint256 value, bytes32 buyLockId)
+    function lockSell(address sellToken, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
         external
     {
         // Ensure value is nonzero.
@@ -408,7 +408,7 @@ contract AcuityAtomicSwapERC20 {
      * @param value Value from the stash to lock.
      * @param buyLockId The buy lock this lock is responding to.
      */
-    function lockSellProxy(address sellToken, address sender, address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 stashAssetId, uint256 value, bytes32 buyLockId)
+    function lockSellProxy(address sellToken, address sender, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
         external
         checkProxy(sender)
     {
@@ -432,13 +432,13 @@ contract AcuityAtomicSwapERC20 {
      * @param hashedSecret Hash of the secret.
      * @param timeout Timeout of the lock.
      */
-    function declineByRecipient(address token, address sender, bytes32 hashedSecret, uint256 timeout)
+    function declineByRecipient(address token, address sender, bytes32 hashedSecret, uint timeout)
         external
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(token, sender, msg.sender, hashedSecret, timeout));
         // Get lock value.
-        uint256 value = lockIdValue[lockId];
+        uint value = lockIdValue[lockId];
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value back to the sender.
@@ -454,7 +454,7 @@ contract AcuityAtomicSwapERC20 {
      * @param secret Secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function unlockBySender(address token, address recipient, bytes32 secret, uint256 timeout)
+    function unlockBySender(address token, address recipient, bytes32 secret, uint timeout)
         external
     {
         // Calculate lockId.
@@ -462,7 +462,7 @@ contract AcuityAtomicSwapERC20 {
         // Check lock has not timed out.
         if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Get lock value.
-        uint256 value = lockIdValue[lockId];
+        uint value = lockIdValue[lockId];
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
@@ -478,7 +478,7 @@ contract AcuityAtomicSwapERC20 {
      * @param secret Secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function unlockByRecipient(address token, address sender, bytes32 secret, uint256 timeout)
+    function unlockByRecipient(address token, address sender, bytes32 secret, uint timeout)
         external
     {
         // Calculate lockId.
@@ -486,7 +486,7 @@ contract AcuityAtomicSwapERC20 {
         // Check lock has not timed out.
         if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Get lock value.
-        uint256 value = lockIdValue[lockId];
+        uint value = lockIdValue[lockId];
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
@@ -503,7 +503,7 @@ contract AcuityAtomicSwapERC20 {
      * @param secret Secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function unlockByRecipientProxy(address token, address sender, address recipient, bytes32 secret, uint256 timeout)
+    function unlockByRecipientProxy(address token, address sender, address recipient, bytes32 secret, uint timeout)
         external
         checkProxy(recipient)
     {
@@ -512,7 +512,7 @@ contract AcuityAtomicSwapERC20 {
         // Check lock has not timed out.
         if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Get lock value.
-        uint256 value = lockIdValue[lockId];
+        uint value = lockIdValue[lockId];
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
@@ -528,7 +528,7 @@ contract AcuityAtomicSwapERC20 {
      * @param hashedSecret Hash of secret recipient unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutStash(address token, address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 stashAssetId)
+    function timeoutStash(address token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId)
         external
     {
         // Calculate lockId.
@@ -536,7 +536,7 @@ contract AcuityAtomicSwapERC20 {
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value.
-        uint256 value = lockIdValue[lockId];
+        uint value = lockIdValue[lockId];
         // Ensure lock has value
         if (value == 0) revert ZeroValue();
         // Delete lock.
@@ -555,7 +555,7 @@ contract AcuityAtomicSwapERC20 {
      * @param hashedSecret Hash of secret recipient unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutStashProxy(address token, address sender, address recipient, bytes32 hashedSecret, uint256 timeout, bytes32 stashAssetId)
+    function timeoutStashProxy(address token, address sender, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId)
         external
         checkProxy(sender)
     {
@@ -564,7 +564,7 @@ contract AcuityAtomicSwapERC20 {
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value.
-        uint256 value = lockIdValue[lockId];
+        uint value = lockIdValue[lockId];
         // Ensure lock has value
         if (value == 0) revert ZeroValue();
         // Delete lock.
@@ -582,7 +582,7 @@ contract AcuityAtomicSwapERC20 {
      * @param hashedSecret Hash of secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutValue(address token, address recipient, bytes32 hashedSecret, uint256 timeout)
+    function timeoutValue(address token, address recipient, bytes32 hashedSecret, uint timeout)
         external
     {
         // Calculate lockId.
@@ -590,7 +590,7 @@ contract AcuityAtomicSwapERC20 {
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value.
-        uint256 value = lockIdValue[lockId];
+        uint value = lockIdValue[lockId];
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
@@ -607,7 +607,7 @@ contract AcuityAtomicSwapERC20 {
      * @param hashedSecret Hash of secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutValueProxy(address token, address sender, address recipient, bytes32 hashedSecret, uint256 timeout)
+    function timeoutValueProxy(address token, address sender, address recipient, bytes32 hashedSecret, uint timeout)
         external
         checkProxy(sender)
     {
@@ -616,7 +616,7 @@ contract AcuityAtomicSwapERC20 {
         // Check lock has timed out.
         if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value.
-        uint256 value = lockIdValue[lockId];
+        uint value = lockIdValue[lockId];
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
@@ -677,7 +677,7 @@ contract AcuityAtomicSwapERC20 {
     function getStashValue(address token, bytes32 assetId, address seller)
         external
         view
-        returns (uint256 value)
+        returns (uint value)
     {
         value = tokenAssetIdAccountValue[token][assetId][seller];
     }
@@ -691,10 +691,10 @@ contract AcuityAtomicSwapERC20 {
      * @param timeout Time after which sender can retrieve the value.
      * @return value Value held in the lock.
      */
-    function getLockValue(address token, address sender, address recipient, bytes32 hashedSecret, uint256 timeout)
+    function getLockValue(address token, address sender, address recipient, bytes32 hashedSecret, uint timeout)
         external
         view
-        returns (uint256 value)
+        returns (uint value)
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(token, sender, recipient, hashedSecret, timeout));
@@ -709,7 +709,7 @@ contract AcuityAtomicSwapERC20 {
     function getLockValue(bytes32 lockId)
         external
         view
-        returns (uint256 value)
+        returns (uint value)
     {
         value = lockIdValue[lockId];
     }
