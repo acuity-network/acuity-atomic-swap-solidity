@@ -170,7 +170,6 @@ contract AcuityAtomicSwap {
             prev = next;
             next = accountLL[prev];
         }
-        bool replace = false;
         // Is sender already in the list?
         if (currentValue > 0) {
             // Search for old previous.
@@ -180,16 +179,16 @@ contract AcuityAtomicSwap {
                 oldPrev = oldNext;
                 oldNext = accountLL[oldPrev];
             }
-            // Is it in the same position?
-            if (prev == oldPrev) {
-                replace = true;
-            }
-            else {
+            // Is it in a different position?
+            if (prev != oldPrev) {
                 // Remove sender from current position.
                 accountLL[oldPrev] = accountLL[account];
+                // Insert into linked list.
+                accountLL[account] = next;
+                accountLL[prev] = account;
             }
         }
-        if (!replace) {
+        else {
             // Insert into linked list.
             accountLL[account] = next;
             accountLL[prev] = account;
