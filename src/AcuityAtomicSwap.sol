@@ -107,14 +107,6 @@ contract AcuityAtomicSwap {
     error ZeroValue();
 
     /**
-     * @dev The stash is not big enough.
-     * @param owner Account removing from a stash.
-     * @param assetId Asset the stash is to be sold for.
-     * @param value How much value was attempted to be removed from the stash.
-     */
-    error StashNotBigEnough(address owner, bytes32 assetId, uint256 value);
-
-    /**
      * @dev Value has already been locked with this lockId.
      * @param lockId Lock already locked.
      */
@@ -219,7 +211,7 @@ contract AcuityAtomicSwap {
     {
         mapping (address => address) storage accountLL = stashAssetIdAccountLL[assetId];
         mapping (address => uint) storage accountValue = stashAssetIdAccountValue[assetId];
-        // Get new total.
+        // Get new total. Will revert if value is bigger than current stash.
         uint total = accountValue[account] - value;
         // Search for old previous.
         address oldPrev = address(0);
@@ -279,8 +271,6 @@ contract AcuityAtomicSwap {
     function moveStash(bytes32 assetIdFrom, bytes32 assetIdTo, uint value)
         external
     {
-         // Check there is enough.
-         if (stashAssetIdAccountValue[assetIdFrom][msg.sender] < value) revert StashNotBigEnough(msg.sender, assetIdFrom, value);
          // Move the deposit.
          stashRemove(msg.sender, assetIdFrom, value);
          stashAdd(msg.sender, assetIdTo, value);
@@ -294,8 +284,6 @@ contract AcuityAtomicSwap {
     function withdrawStash(bytes32 assetId, uint value)
         external
     {
-        // Check there is enough.
-        if (stashAssetIdAccountValue[assetId][msg.sender] < value) revert StashNotBigEnough(msg.sender, assetId, value);
         // Remove the deposit.
         stashRemove(msg.sender, assetId, value);
         // Send the funds back.
@@ -354,8 +342,6 @@ contract AcuityAtomicSwap {
     {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
-        // Check there is enough.
-        if (stashAssetIdAccountValue[stashAssetId][msg.sender] < value) revert StashNotBigEnough(msg.sender, stashAssetId, value);
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
@@ -383,8 +369,6 @@ contract AcuityAtomicSwap {
     {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
-        // Check there is enough.
-        if (stashAssetIdAccountValue[stashAssetId][sender] < value) revert StashNotBigEnough(sender, stashAssetId, value);
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.

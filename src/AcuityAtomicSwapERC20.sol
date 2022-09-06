@@ -116,15 +116,6 @@ contract AcuityAtomicSwapERC20 {
     error ZeroValue();
 
     /**
-     * @dev The stash is not big enough.
-     * @param token Address of token.
-     * @param owner Account removing from a stash.
-     * @param assetId Asset the stash is to be sold for.
-     * @param value How much value was attempted to be removed from the stash.
-     */
-    error StashNotBigEnough(address token, address owner, bytes32 assetId, uint256 value);
-
-    /**
      * @dev Value has already been locked with this lockId.
      * @param lockId Lock already locked.
      */
@@ -256,7 +247,7 @@ contract AcuityAtomicSwapERC20 {
     {
         mapping (address => address) storage accountLL = tokenAssetIdAccountLL[token][assetId];
         mapping (address => uint) storage accountValue = tokenAssetIdAccountValue[token][assetId];
-        // Get new total.
+        // Get new total. Will revert if value is bigger than current stash.
         uint total = accountValue[account] - value;
         // Search for old previous.
         address oldPrev = address(0);
@@ -320,8 +311,6 @@ contract AcuityAtomicSwapERC20 {
     function moveStash(address sellToken, bytes32 assetIdFrom, bytes32 assetIdTo, uint value)
         external
     {
-         // Check there is enough.
-         if (tokenAssetIdAccountValue[sellToken][assetIdFrom][msg.sender] < value) revert StashNotBigEnough(sellToken, msg.sender, assetIdFrom, value);
          // Move the deposit.
          stashRemove(sellToken, msg.sender, assetIdFrom, value);
          stashAdd(sellToken, msg.sender, assetIdTo, value);
@@ -336,8 +325,6 @@ contract AcuityAtomicSwapERC20 {
     function withdrawStash(address sellToken, bytes32 assetId, uint value)
         external
     {
-        // Check there is enough.
-        if (tokenAssetIdAccountValue[sellToken][assetId][msg.sender] < value) revert StashNotBigEnough(sellToken, msg.sender, assetId, value);
         // Remove the deposit.
         stashRemove(sellToken, msg.sender, assetId, value);
         // Send the funds back.
@@ -400,8 +387,6 @@ contract AcuityAtomicSwapERC20 {
     {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
-        // Check there is enough.
-        if (tokenAssetIdAccountValue[sellToken][stashAssetId][msg.sender] < value) revert StashNotBigEnough(sellToken, msg.sender, stashAssetId, value);
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sellToken, msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
@@ -430,8 +415,6 @@ contract AcuityAtomicSwapERC20 {
     {
         // Ensure value is nonzero.
         if (value == 0) revert ZeroValue();
-        // Check there is enough.
-        if (tokenAssetIdAccountValue[sellToken][stashAssetId][sender] < value) revert StashNotBigEnough(sellToken, sender, stashAssetId, value);
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sellToken, sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
