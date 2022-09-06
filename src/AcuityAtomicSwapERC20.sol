@@ -206,7 +206,7 @@ contract AcuityAtomicSwapERC20 {
             next = accountLL[prev];
         }
         // Is sender already in the list?
-        if (currentValue > 0) {
+        if (currentValue != 0) {
             // Search for old previous.
             address oldPrev = prev;
             address oldNext = next;
@@ -256,7 +256,7 @@ contract AcuityAtomicSwapERC20 {
             oldNext = accountLL[oldPrev];
         }
         // Is there still a stash?
-        if (total > 0) {
+        if (total != 0) {
             // Search for new previous.
             address prev = oldPrev;
             address next = oldNext;
@@ -642,7 +642,7 @@ contract AcuityAtomicSwapERC20 {
         // Find first account after offset.
         address account = address(0);
         address next = accountLL[account];
-        while (offset > 0) {
+        while (offset != 0) {
             if (next == address(0)) {
                 break;
             }
@@ -660,7 +660,7 @@ contract AcuityAtomicSwapERC20 {
         accounts = new address[](_limit);
         values = new uint[](_limit);
         // Populate the arrays.
-        for (uint i = 0; i < _limit; ++i) {
+        for (uint i = 0; i != _limit; ++i) {
             account = accountLL[account];
             accounts[i] = account;
             values[i] = accountValue[account];
