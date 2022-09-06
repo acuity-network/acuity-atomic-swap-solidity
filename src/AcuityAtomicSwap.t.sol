@@ -165,17 +165,27 @@ contract AcuityAtomicSwapTest is DSTest {
         assertEq(values[3], 40);
     }
 
-    function testControlWithdrawNotEnough() public {
+    function testControlWithdrawStashNotZero() public {
         account0.depositStash{value: 50}(hex"1234");
         account0.withdrawStash(hex"1234", 50);
     }
 
-    function testFailWithdrawNotEnough() public {
+    function testFailWithdrawStashNotZero() public {
+        account0.depositStash{value: 50}(hex"1234");
+        account0.withdrawStash(hex"1234", 0);
+    }
+
+    function testControlWithdrawStashNotEnough() public {
+        account0.depositStash{value: 50}(hex"1234");
+        account0.withdrawStash(hex"1234", 50);
+    }
+
+    function testFailWithdrawStashNotEnough() public {
         account0.depositStash{value: 50}(hex"1234");
         account0.withdrawStash(hex"1234", 51);
     }
 
-    function testWithdraw() public {
+    function testWithdrawStash() public {
         (address[] memory accounts, uint[] memory values) = acuityAtomicSwap.getStashes(hex"1234", 0, 50);
         assertEq(accounts.length, 0);
         assertEq(values.length, 0);

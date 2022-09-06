@@ -132,6 +132,15 @@ contract AcuityAtomicSwap {
     error InvalidProxy(address account, address proxyAccount);
 
     /**
+     * @dev Ensure value is nonzero.
+     * @param value Value to ensure not zero.
+     */
+    modifier notZero(uint value) {
+        if (value == 0) revert ZeroValue();
+        _;
+    }
+
+    /**
      * @dev Check if account is proxy for msg.sender
      * @param account Account to check.
      */
@@ -153,7 +162,7 @@ contract AcuityAtomicSwap {
      * @dev Add value to stash be sold for a specific asset.
      * @param account Account to add stash for.
      * @param assetId Asset the stash is to be sold for.
-     * @param value Size of deposit to add. 0 will result in corrupted state.
+     * @param value Size of deposit to add. 0 will malfunction.
      */
     function stashAdd(address account, bytes32 assetId, uint value)
         internal
@@ -203,7 +212,7 @@ contract AcuityAtomicSwap {
      * @dev Remove value from stash be sold for a specific asset.
      * @param account Account to add stash for.
      * @param assetId Asset the stash is to be sold for.
-     * @param value Size of deposit to remove. Will revert if bigger than or equal to deposit value.
+     * @param value Size of deposit to remove. 0 will malfunction.
      */
     function stashRemove(address account, bytes32 assetId, uint value)
         internal
@@ -254,9 +263,8 @@ contract AcuityAtomicSwap {
     function depositStash(bytes32 assetId)
         external
         payable
+        notZero(msg.value)
     {
-        // Ensure value is nonzero.
-        if (msg.value == 0) revert ZeroValue();
         // Records the deposit.
         stashAdd(msg.sender, assetId, msg.value);
     }
@@ -269,6 +277,7 @@ contract AcuityAtomicSwap {
      */
     function moveStash(bytes32 assetIdFrom, bytes32 assetIdTo, uint value)
         external
+        notZero(value)
     {
          // Move the deposit.
          stashRemove(msg.sender, assetIdFrom, value);
@@ -282,6 +291,7 @@ contract AcuityAtomicSwap {
      */
     function withdrawStash(bytes32 assetId, uint value)
         external
+        notZero(value)
     {
         // Remove the deposit.
         stashRemove(msg.sender, assetId, value);
@@ -314,9 +324,8 @@ contract AcuityAtomicSwap {
     function lockBuy(address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice)
         external
         payable
+        notZero(msg.value)
     {
-        // Ensure value is nonzero.
-        if (msg.value == 0) revert ZeroValue();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
@@ -338,9 +347,8 @@ contract AcuityAtomicSwap {
      */
     function lockSell(address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
         external
+        notZero(value)
     {
-        // Ensure value is nonzero.
-        if (value == 0) revert ZeroValue();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
@@ -365,9 +373,8 @@ contract AcuityAtomicSwap {
     function lockSellProxy(address sender, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
         external
         checkProxy(sender)
+        notZero(value)
     {
-        // Ensure value is nonzero.
-        if (value == 0) revert ZeroValue();
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.

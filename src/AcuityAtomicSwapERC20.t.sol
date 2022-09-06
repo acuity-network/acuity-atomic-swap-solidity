@@ -206,17 +206,27 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         assertEq(values[3], 40);
     }
 
-    function testControlWithdrawNotEnough() public {
+    function testControlWithdrawStashNotZero() public {
         account0.depositStash(address(dummyToken), hex"1234", 50);
         account0.withdrawStash(address(dummyToken), hex"1234", 50);
     }
 
-    function testFailWithdrawNotEnough() public {
+    function testFailWithdrawStashNotZero() public {
+        account0.depositStash(address(dummyToken), hex"1234", 50);
+        account0.withdrawStash(address(dummyToken), hex"1234", 0);
+    }
+
+    function testControlWithdrawStashNotEnough() public {
+        account0.depositStash(address(dummyToken), hex"1234", 50);
+        account0.withdrawStash(address(dummyToken), hex"1234", 50);
+    }
+
+    function testFailWithdrawStashNotEnough() public {
         account0.depositStash(address(dummyToken), hex"1234", 50);
         account0.withdrawStash(address(dummyToken), hex"1234", 51);
     }
 
-    function testWithdraw() public {
+    function testWithdrawStash() public {
         (address[] memory accounts, uint[] memory values) = acuityAtomicSwapERC20.getStashes(address(dummyToken), hex"1234", 0, 50);
         assertEq(accounts.length, 0);
         assertEq(values.length, 0);
