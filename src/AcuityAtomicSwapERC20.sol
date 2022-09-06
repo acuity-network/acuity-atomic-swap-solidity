@@ -666,19 +666,19 @@ contract AcuityAtomicSwapERC20 {
             }
             account = next;
             next = accountLL[account];
-            offset--;
+            --offset;
         }
         // Count how many accounts to return.
         uint _limit = 0;
         while (next != address(0) && _limit < limit) {
             next = accountLL[next];
-            _limit++;
+            ++_limit;
         }
         // Allocate the arrays.
         accounts = new address[](_limit);
         values = new uint[](_limit);
         // Populate the arrays.
-        for (uint i = 0; i < _limit; i++) {
+        for (uint i = 0; i < _limit; ++i) {
             account = accountLL[account];
             accounts[i] = account;
             values[i] = accountValue[account];
