@@ -527,7 +527,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testLockSell() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         uint timeout = block.timestamp + 1;
@@ -598,7 +598,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testLockSellProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"1234";
         bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
         uint timeout = block.timestamp + 1;
@@ -613,7 +613,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlDeclineByRecipientLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -624,7 +624,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailDeclineByRecipientLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -636,7 +636,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testDeclineByRecipient() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -654,7 +654,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlUnlockBySenderLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -665,7 +665,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailUnlockBySenderLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -677,7 +677,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlUnlockBySenderTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -688,7 +688,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailUnlockBySenderTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp;
@@ -699,7 +699,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testUnlockBySender() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -718,7 +718,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlUnlockByRecipientLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -729,7 +729,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailUnlockByRecipientLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -741,7 +741,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlUnlockByRecipientTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -752,7 +752,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailUnlockByRecipientTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp;
@@ -763,7 +763,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testUnlockByRecipient() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -782,7 +782,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlUnlockByRecipientProxyInvalidProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -794,7 +794,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailUnlockByRecipientProxyInvalidProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -805,7 +805,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlUnlockByRecipientProxyLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -817,7 +817,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailUnlockByRecipientProxyLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -830,7 +830,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlUnlockByRecipientProxyTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
@@ -842,7 +842,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailUnlockByRecipientProxyTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp;
@@ -854,7 +854,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testUnlockByRecipientProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -874,7 +874,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutStashLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -885,7 +885,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutStashLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -897,7 +897,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutStashNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -908,7 +908,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutStashNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -919,7 +919,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testTimeoutStash() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         assertEq(acuityAtomicSwapERC20.getStashValue(address(dummyToken), assetId, address(this)), 50);
 
@@ -946,7 +946,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutStashProxyInvalidProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -958,7 +958,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutStashProxyInvalidProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -969,7 +969,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutStashProxyLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -981,7 +981,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutStashProxyLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -994,7 +994,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutStashProxyNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1006,7 +1006,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutStashProxyNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1018,7 +1018,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testTimeoutStashProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         assertEq(acuityAtomicSwapERC20.getStashValue(address(dummyToken), assetId, address(this)), 50);
 
@@ -1046,7 +1046,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutValueLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1057,7 +1057,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutValueLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1069,7 +1069,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutValueNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1080,7 +1080,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutValueNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1091,7 +1091,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testTimeoutValue() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         assertEq(acuityAtomicSwapERC20.getStashValue(address(dummyToken), assetId, address(this)), 50);
 
@@ -1113,7 +1113,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutValueProxyInvalidProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1125,7 +1125,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutValueProxyInvalidProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1136,7 +1136,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutValueProxyLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1148,7 +1148,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutValueProxyLockNotFound() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1161,7 +1161,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlTimeoutValueProxyNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1173,7 +1173,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testFailTimeoutValueProxyNotTimedOut() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -1185,7 +1185,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testTimeoutValueProxy() public {
-        bytes16 assetId = hex"1234";
+        bytes32 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
         assertEq(acuityAtomicSwapERC20.getStashValue(address(dummyToken), assetId, address(this)), 50);
 
