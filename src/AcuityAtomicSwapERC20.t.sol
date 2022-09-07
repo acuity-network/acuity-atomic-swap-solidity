@@ -612,6 +612,29 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         assertEq(acuityAtomicSwapERC20.getLockValue(address(dummyToken), address(this), address(account0), hashedSecret, timeout), value);
     }
 
+    function testControlDeclineByRecipientLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp + 1;
+        uint value = 10;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, value, hex"1234");
+        account0.declineByRecipient(address(dummyToken), address(this), hashedSecret, timeout);
+    }
+
+    function testFailDeclineByRecipientLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp + 1;
+        uint value = 10;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, value, hex"1234");
+        account0.declineByRecipient(address(dummyToken), address(this), hashedSecret, timeout);
+        account0.declineByRecipient(address(dummyToken), address(this), hashedSecret, timeout);
+    }
+
     function testDeclineByRecipient() public {
         bytes16 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
@@ -628,6 +651,29 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         assertEq(acuityAtomicSwapERC20.getLockValue(address(dummyToken), address(this), address(account0), hashedSecret, timeout), 0);
         assertEq(dummyToken.balanceOf(address(acuityAtomicSwapERC20)), 40);
         assertEq(dummyToken.balanceOf(address(this)), startBalance + value);
+    }
+
+    function testControlUnlockBySenderLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp + 1;
+
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 10);
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAtomicSwapERC20.unlockBySender(address(dummyToken), address(account0), secret, timeout);
+    }
+
+    function testFailUnlockBySenderLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp + 1;
+
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 10);
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAtomicSwapERC20.unlockBySender(address(dummyToken), address(account0), secret, timeout);
+        acuityAtomicSwapERC20.unlockBySender(address(dummyToken), address(account0), secret, timeout);
     }
 
     function testControlUnlockBySenderTimedOut() public {
@@ -669,6 +715,29 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         assertEq(acuityAtomicSwapERC20.getLockValue(address(dummyToken), address(this), address(account0), hashedSecret, timeout), 0);
         assertEq(dummyToken.balanceOf(address(acuityAtomicSwapERC20)), 40);
         assertEq(dummyToken.balanceOf(address(account0)), startBalance + 10);
+    }
+
+    function testControlUnlockByRecipientLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp + 1;
+
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 10);
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        account0.unlockByRecipient(address(dummyToken), address(this), secret, timeout);
+    }
+
+    function testFailUnlockByRecipientLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp + 1;
+
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 10);
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        account0.unlockByRecipient(address(dummyToken), address(this), secret, timeout);
+        account0.unlockByRecipient(address(dummyToken), address(this), secret, timeout);
     }
 
     function testControlUnlockByRecipientTimedOut() public {
@@ -735,6 +804,31 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         account1.unlockByRecipientProxy(address(dummyToken), address(this), address(account0), secret, timeout);
     }
 
+    function testControlUnlockByRecipientProxyLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp + 1;
+
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 10);
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        account0.setProxyAccount(address(account1));
+        account1.unlockByRecipientProxy(address(dummyToken), address(this), address(account0), secret, timeout);
+    }
+
+    function testFailUnlockByRecipientProxyLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp + 1;
+
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 10);
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        account0.setProxyAccount(address(account1));
+        account1.unlockByRecipientProxy(address(dummyToken), address(this), address(account0), secret, timeout);
+        account1.unlockByRecipientProxy(address(dummyToken), address(this), address(account0), secret, timeout);
+    }
+
     function testControlUnlockByRecipientProxyTimedOut() public {
         bytes16 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
@@ -779,6 +873,29 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         assertEq(dummyToken.balanceOf(address(account0)), startBalance + 10);
     }
 
+    function testControlTimeoutStashLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAtomicSwapERC20.timeoutStash(address(dummyToken), address(account0), hashedSecret, timeout, assetId);
+    }
+
+    function testFailTimeoutStashLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAtomicSwapERC20.timeoutStash(address(dummyToken), address(account0), hashedSecret, timeout, assetId);
+        acuityAtomicSwapERC20.timeoutStash(address(dummyToken), address(account0), hashedSecret, timeout, assetId);
+    }
+
     function testControlTimeoutStashNotTimedOut() public {
         bytes16 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
@@ -798,28 +915,6 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint timeout = block.timestamp + 1;
 
         acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
-        acuityAtomicSwapERC20.timeoutStash(address(dummyToken), address(account0), hashedSecret, timeout, assetId);
-    }
-
-    function testControlTimeoutStashZeroValue() public {
-        bytes16 assetId = hex"1234";
-        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
-
-        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
-        uint timeout = block.timestamp;
-
-        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
-        acuityAtomicSwapERC20.timeoutStash(address(dummyToken), address(account0), hashedSecret, timeout, assetId);
-    }
-
-    function testFailTimeoutStashZeroValue() public {
-        bytes16 assetId = hex"1234";
-        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
-
-        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
-        uint timeout = block.timestamp;
-
-        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 0, hex"1234");
         acuityAtomicSwapERC20.timeoutStash(address(dummyToken), address(account0), hashedSecret, timeout, assetId);
     }
 
@@ -873,6 +968,31 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         account1.timeoutStashProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout, assetId);
     }
 
+    function testControlTimeoutStashProxyLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAccount.setProxyAccount(address(account1));
+        account1.timeoutStashProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout, assetId);
+    }
+
+    function testFailTimeoutStashProxyLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAccount.setProxyAccount(address(account1));
+        account1.timeoutStashProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout, assetId);
+        account1.timeoutStashProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout, assetId);
+    }
+
     function testControlTimeoutStashProxyNotTimedOut() public {
         bytes16 assetId = hex"1234";
         acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
@@ -893,30 +1013,6 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint timeout = block.timestamp + 1;
 
         acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
-        acuityAccount.setProxyAccount(address(account1));
-        account1.timeoutStashProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout, assetId);
-    }
-
-    function testControlTimeoutStashProxyZeroValue() public {
-        bytes16 assetId = hex"1234";
-        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
-
-        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
-        uint timeout = block.timestamp;
-
-        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
-        acuityAccount.setProxyAccount(address(account1));
-        account1.timeoutStashProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout, assetId);
-    }
-
-    function testFailTimeoutStashProxyZeroValue() public {
-        bytes16 assetId = hex"1234";
-        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
-
-        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
-        uint timeout = block.timestamp;
-
-        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 0, hex"1234");
         acuityAccount.setProxyAccount(address(account1));
         account1.timeoutStashProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout, assetId);
     }
@@ -947,6 +1043,29 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         assertEq(accounts.length, 1);
         assertEq(accounts[0], address(this));
         assertEq(values[0], 50);
+    }
+
+    function testControlTimeoutValueLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAtomicSwapERC20.timeoutValue(address(dummyToken), address(account0), hashedSecret, timeout);
+    }
+
+    function testFailTimeoutValueLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAtomicSwapERC20.timeoutValue(address(dummyToken), address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.timeoutValue(address(dummyToken), address(account0), hashedSecret, timeout);
     }
 
     function testControlTimeoutValueNotTimedOut() public {
@@ -1013,6 +1132,31 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint timeout = block.timestamp;
 
         acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        account1.timeoutValueProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout);
+    }
+
+    function testControlTimeoutValueProxyLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAccount.setProxyAccount(address(account1));
+        account1.timeoutValueProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout);
+    }
+
+    function testFailTimeoutValueProxyLockNotFound() public {
+        bytes16 assetId = hex"1234";
+        acuityAtomicSwapERC20.depositStash(address(dummyToken), assetId, 50);
+
+        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
+        uint timeout = block.timestamp;
+
+        acuityAtomicSwapERC20.lockSell(address(dummyToken), address(account0), hashedSecret, timeout, assetId, 10, hex"1234");
+        acuityAccount.setProxyAccount(address(account1));
+        account1.timeoutValueProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout);
         account1.timeoutValueProxy(address(dummyToken), address(this), address(account0), hashedSecret, timeout);
     }
 

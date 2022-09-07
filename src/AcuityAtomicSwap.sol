@@ -113,6 +113,12 @@ contract AcuityAtomicSwap {
     error LockAlreadyExists(bytes32 lockId);
 
     /**
+     * @dev Lock does not exist.
+     * @param lockId Lock that does not exist.
+     */
+    error LockNotFound(bytes32 lockId);
+
+    /**
      * @dev The lock has already timed out.
      * @param lockId Lock timed out.
      */
@@ -415,6 +421,8 @@ contract AcuityAtomicSwap {
         bytes32 lockId = keccak256(abi.encode(sender, msg.sender, hashedSecret, timeout));
         // Get lock value.
         uint value = lockIdValue[lockId];
+        // Check if the lock exists.
+        if (value == 0) revert LockNotFound(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value back to the sender.
@@ -434,10 +442,12 @@ contract AcuityAtomicSwap {
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, keccak256(abi.encodePacked(secret)), timeout));
-        // Check lock has not timed out.
-        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Get lock value.
         uint value = lockIdValue[lockId];
+        // Check if the lock exists.
+        if (value == 0) revert LockNotFound(lockId);
+        // Check lock has not timed out.
+        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
@@ -457,10 +467,12 @@ contract AcuityAtomicSwap {
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sender, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
-        // Check lock has not timed out.
-        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Get lock value.
         uint value = lockIdValue[lockId];
+        // Check if the lock exists.
+        if (value == 0) revert LockNotFound(lockId);
+        // Check lock has not timed out.
+        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
@@ -482,10 +494,12 @@ contract AcuityAtomicSwap {
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sender, recipient, keccak256(abi.encodePacked(secret)), timeout));
-        // Check lock has not timed out.
-        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Get lock value.
         uint value = lockIdValue[lockId];
+        // Check if the lock exists.
+        if (value == 0) revert LockNotFound(lockId);
+        // Check lock has not timed out.
+        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
@@ -505,12 +519,12 @@ contract AcuityAtomicSwap {
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value.
         uint value = lockIdValue[lockId];
-        // Ensure lock has value
-        if (value == 0) revert ZeroValue();
+        // Check if the lock exists.
+        if (value == 0) revert LockNotFound(lockId);
+        // Check lock has timed out.
+        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Return funds.
@@ -532,12 +546,12 @@ contract AcuityAtomicSwap {
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sender, recipient, hashedSecret, timeout));
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value.
         uint value = lockIdValue[lockId];
-        // Ensure lock has value
-        if (value == 0) revert ZeroValue();
+        // Check if the lock exists.
+        if (value == 0) revert LockNotFound(lockId);
+        // Check lock has timed out.
+        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Return funds.
@@ -557,10 +571,12 @@ contract AcuityAtomicSwap {
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value.
         uint value = lockIdValue[lockId];
+        // Check if the lock exists.
+        if (value == 0) revert LockNotFound(lockId);
+        // Check lock has timed out.
+        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
@@ -582,10 +598,12 @@ contract AcuityAtomicSwap {
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sender, recipient, hashedSecret, timeout));
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Get lock value.
         uint value = lockIdValue[lockId];
+        // Check if the lock exists.
+        if (value == 0) revert LockNotFound(lockId);
+        // Check lock has timed out.
+        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer the value.
