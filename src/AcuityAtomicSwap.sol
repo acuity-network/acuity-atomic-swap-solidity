@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.15;
 
-import "./AcuityAccount.sol";
-
 contract AcuityAtomicSwap {
-
-    /**
-     * @dev Address of AcuityAccount contract.
-     */
-    AcuityAccount public immutable acuityAccount;
 
     /**
      * @dev Mapping of lockId to value stored in the lock.
@@ -111,13 +104,6 @@ contract AcuityAtomicSwap {
     modifier notZero(uint value) {
         if (value == 0) revert ZeroValue();
         _;
-    }
-
-    /**
-     * @param _acuityAccount Address of AcuityAccount contract.
-     */
-    constructor (AcuityAccount _acuityAccount) {
-        acuityAccount = _acuityAccount;
     }
 
     /**

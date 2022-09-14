@@ -9,11 +9,9 @@ import "./ERC20.sol";
 
 contract AccountProxy {
 
-    AcuityAccount acuityAccount;
     AcuityAtomicSwapERC20 acuityAtomicSwapERC20;
 
-    constructor (AcuityAccount _acuityAccount, AcuityAtomicSwapERC20 _acuityAtomicSwapERC20) {
-        acuityAccount = _acuityAccount;
+    constructor (AcuityAtomicSwapERC20 _acuityAtomicSwapERC20) {
         acuityAtomicSwapERC20 = _acuityAtomicSwapERC20;
     }
 
@@ -63,7 +61,6 @@ contract DummyToken is ERC20 {
 }
 
 contract AcuityAtomicSwapERC20Test is DSTest {
-    AcuityAccount acuityAccount;
     AcuityAtomicSwapERC20 acuityAtomicSwapERC20;
     DummyToken dummyToken;
     AccountProxy account0;
@@ -74,12 +71,11 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     receive() external payable {}
 
     function setUp() public {
-        acuityAccount = new AcuityAccount();
-        acuityAtomicSwapERC20 = new AcuityAtomicSwapERC20(acuityAccount);
-        account0 = new AccountProxy(acuityAccount, acuityAtomicSwapERC20);
-        account1 = new AccountProxy(acuityAccount, acuityAtomicSwapERC20);
-        account2 = new AccountProxy(acuityAccount, acuityAtomicSwapERC20);
-        account3 = new AccountProxy(acuityAccount, acuityAtomicSwapERC20);
+        acuityAtomicSwapERC20 = new AcuityAtomicSwapERC20();
+        account0 = new AccountProxy(acuityAtomicSwapERC20);
+        account1 = new AccountProxy(acuityAtomicSwapERC20);
+        account2 = new AccountProxy(acuityAtomicSwapERC20);
+        account3 = new AccountProxy(acuityAtomicSwapERC20);
 
         address[] memory accounts = new address[](5);
         accounts[0] = address(this);

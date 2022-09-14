@@ -8,11 +8,9 @@ import "./AcuityAtomicSwap.sol";
 
 contract AccountProxy {
 
-    AcuityAccount acuityAccount;
     AcuityAtomicSwap acuityAtomicSwap;
 
-    constructor (AcuityAccount _acuityAccount, AcuityAtomicSwap _acuityAtomicSwap) {
-        acuityAccount = _acuityAccount;
+    constructor (AcuityAtomicSwap _acuityAtomicSwap) {
         acuityAtomicSwap = _acuityAtomicSwap;
     }
 
@@ -31,7 +29,6 @@ contract AccountProxy {
 }
 
 contract AcuityAtomicSwapTest is DSTest {
-    AcuityAccount acuityAccount;
     AcuityAtomicSwap acuityAtomicSwap;
     AccountProxy account0;
     AccountProxy account1;
@@ -41,12 +38,11 @@ contract AcuityAtomicSwapTest is DSTest {
     receive() external payable {}
 
     function setUp() public {
-        acuityAccount = new AcuityAccount();
-        acuityAtomicSwap = new AcuityAtomicSwap(acuityAccount);
-        account0 = new AccountProxy(acuityAccount, acuityAtomicSwap);
-        account1 = new AccountProxy(acuityAccount, acuityAtomicSwap);
-        account2 = new AccountProxy(acuityAccount, acuityAtomicSwap);
-        account3 = new AccountProxy(acuityAccount, acuityAtomicSwap);
+        acuityAtomicSwap = new AcuityAtomicSwap();
+        account0 = new AccountProxy(acuityAtomicSwap);
+        account1 = new AccountProxy(acuityAtomicSwap);
+        account2 = new AccountProxy(acuityAtomicSwap);
+        account3 = new AccountProxy(acuityAtomicSwap);
     }
 
     function testControllockBuyZeroValue() public {
