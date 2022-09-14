@@ -3,7 +3,6 @@ pragma solidity ^0.8.15;
 
 import "ds-test/test.sol";
 
-import "./AcuityAccount.sol";
 import "./AcuityAtomicSwap.sol";
 
 contract AccountProxy {
