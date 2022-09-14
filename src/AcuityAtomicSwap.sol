@@ -99,10 +99,9 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev Ensure value is nonzero.
-     * @param value Value to ensure not zero.
      */
-    modifier notZero(uint value) {
-        if (value == 0) revert ZeroValue();
+    modifier notZero {
+        if (msg.value == 0) revert ZeroValue();
         _;
     }
 
@@ -117,7 +116,7 @@ contract AcuityAtomicSwap {
     function lockBuy(address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice)
         external
         payable
-        notZero(msg.value)
+        notZero
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
@@ -140,7 +139,7 @@ contract AcuityAtomicSwap {
     function lockSell(address recipient, bytes32 hashedSecret, uint timeout, bytes32 buyAssetId, bytes32 buyLockId)
         external
         payable
-        notZero(msg.value)
+        notZero
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
