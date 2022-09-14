@@ -12,37 +12,9 @@ contract AcuityAtomicSwapERC20 {
     AcuityAccount public immutable acuityAccount;
 
     /**
-     * @dev Mapping of sell token address to buy assetId to linked list of accounts, starting with the largest.
-     */
-    mapping (address => mapping (bytes32 => mapping (address => address))) tokenAssetIdAccountLL;
-
-    /**
-     * @dev Mapping of sell token address to buy assetId to selling account to value.
-     */
-    mapping (address => mapping (bytes32 => mapping (address => uint))) tokenAssetIdAccountValue;
-
-    /**
      * @dev Mapping of lockId to value stored in the lock.
      */
     mapping (bytes32 => uint) lockIdValue;
-
-    /**
-     * @dev Value has been added to a stash.
-     * @param token Address of token.
-     * @param account Account adding to a stash.
-     * @param assetId Asset the stash is to be sold for.
-     * @param value How much value has been added to the stash.
-     */
-    event StashAdd(address indexed token, address indexed account, bytes32 indexed assetId, uint value);
-
-    /**
-     * @dev Value has been removed from a stash.
-     * @param token Address of token.
-     * @param account Account removing from a stash.
-     * @param assetId Asset the stash is to be sold for.
-     * @param value How much value has been removed from the stash.
-     */
-    event StashRemove(address indexed token, address indexed account, bytes32 indexed assetId, uint value);
 
     /**
      * @dev Value has been locked with sell asset info.
@@ -145,29 +117,11 @@ contract AcuityAtomicSwapERC20 {
     error TokenTransferFailed(address token, address from, address to, uint value);
 
     /**
-     * @dev Invalid proxy account.
-     * @param account Account being proxied.
-     * @param proxyAccount Invalid proxy account.
-     */
-    error InvalidProxy(address account, address proxyAccount);
-
-    /**
      * @dev Ensure value is nonzero.
      * @param value Value to ensure not zero.
      */
     modifier notZero(uint value) {
         if (value == 0) revert ZeroValue();
-        _;
-    }
-
-    /**
-     * @dev Check if account is proxy for msg.sender
-     * @param account Account to check.
-     */
-    modifier checkProxy(address account) {
-        if (acuityAccount.getProxyAccount(account) != msg.sender) {
-            revert InvalidProxy(account, msg.sender);
-        }
         _;
     }
 
@@ -196,185 +150,6 @@ contract AcuityAtomicSwapERC20 {
     {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20.transferFrom.selector, from, to, value));
         if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, from, to, value);
-    }
-
-    /**
-     * @dev Add value to stash be sold for a specific asset.
-     * @param token Address of sell token.
-     * @param account Account to add stash for.
-     * @param assetId Asset the stash is to be sold for.
-     * @param value Size of deposit to add. 0 will malfunction.
-     */
-    function stashAdd(address token, address account, bytes32 assetId, uint value)
-        internal
-    {
-        mapping (address => address) storage accountLL = tokenAssetIdAccountLL[token][assetId];
-        mapping (address => uint) storage accountValue = tokenAssetIdAccountValue[token][assetId];
-        // Get new total.
-        uint currentValue = accountValue[account];
-        uint total = currentValue + value;
-        // Search for new previous.
-        address prev = address(0);
-        address next = accountLL[prev];
-        while (accountValue[next] >= total) {
-            prev = next;
-            next = accountLL[prev];
-        }
-        // Is sender already in the list?
-        if (currentValue != 0) {
-            // Search for old previous.
-            address oldPrev = prev;
-            address oldNext = next;
-            while (oldNext != account) {
-                oldPrev = oldNext;
-                oldNext = accountLL[oldPrev];
-            }
-            // Is it in a different position?
-            if (prev != oldPrev) {
-                // Remove sender from current position.
-                accountLL[oldPrev] = accountLL[account];
-                // Insert into linked list.
-                accountLL[account] = next;
-                accountLL[prev] = account;
-            }
-        }
-        else {
-            // Insert into linked list.
-            accountLL[account] = next;
-            accountLL[prev] = account;
-        }
-        // Update the value deposited.
-        accountValue[account] = total;
-        // Log info.
-        emit StashAdd(token, account, assetId, value);
-    }
-
-    /**
-     * @dev Remove value from stash be sold for a specific asset.
-     * @param token Address of sell token.
-     * @param account Account to add stash for.
-     * @param assetId Asset the stash is to be sold for.
-     * @param value Size of deposit to remove. 0 will malfunction.
-     */
-    function stashRemove(address token, address account, bytes32 assetId, uint value)
-        internal
-    {
-        mapping (address => address) storage accountLL = tokenAssetIdAccountLL[token][assetId];
-        mapping (address => uint) storage accountValue = tokenAssetIdAccountValue[token][assetId];
-        // Get new total. Will revert if value is bigger than current stash.
-        uint total = accountValue[account] - value;
-        // Search for old previous.
-        address oldPrev = address(0);
-        address oldNext = accountLL[oldPrev];
-        while (oldNext != account) {
-            oldPrev = oldNext;
-            oldNext = accountLL[oldPrev];
-        }
-        // Is there still a stash?
-        if (total != 0) {
-            // Search for new previous.
-            address prev = oldPrev;
-            address next = oldNext;
-            while (accountValue[next] >= total) {
-                prev = next;
-                next = accountLL[prev];
-            }
-            // Is it in a new position?
-            if (prev != account) {
-                // Remove sender from old position.
-                accountLL[oldPrev] = accountLL[account];
-                // Insert into new position.
-                accountLL[account] = next;
-                accountLL[prev] = account;
-            }
-        }
-        else {
-            // Remove sender from list.
-            accountLL[oldPrev] = accountLL[account];
-        }
-        // Update the value deposited.
-        accountValue[account] = total;
-        // Log info.
-        emit StashRemove(token, account, assetId, value);
-    }
-
-    /**
-     * @dev Stash value to be sold for a specific asset.
-     * @param sellToken Address of sell token.
-     * @param assetId Asset the stash is to be sold for.
-     * @param value Size of deposit.
-     */
-    function depositStash(address sellToken, bytes32 assetId, uint value)
-        external
-        notZero(value)
-    {
-        // Move the token.
-        safeTransferFrom(sellToken, msg.sender, address(this), value);
-        // Record the deposit.
-        stashAdd(sellToken, msg.sender, assetId, value);
-    }
-
-    /**
-     * @dev Move value from one stash to another.
-     * @param sellToken Address of sell token.
-     * @param assetIdFrom Asset the source stash is to be sold for.
-     * @param assetIdTo Asset the destination stash is to be sold for.
-     * @param value Value to move.
-     */
-    function moveStash(address sellToken, bytes32 assetIdFrom, bytes32 assetIdTo, uint value)
-        external
-        notZero(value)
-    {
-         // Move the deposit.
-         stashRemove(sellToken, msg.sender, assetIdFrom, value);
-         stashAdd(sellToken, msg.sender, assetIdTo, value);
-     }
-
-    /**
-     * @dev Withdraw value from a stash.
-     * @param sellToken Address of sell token.
-     * @param assetId Asset the stash is to be sold for.
-     * @param value Value to withdraw.
-     */
-    function withdrawStash(address sellToken, bytes32 assetId, uint value)
-        external
-        notZero(value)
-    {
-        // Remove the deposit.
-        stashRemove(sellToken, msg.sender, assetId, value);
-        // Send the funds back.
-        safeTransfer(sellToken, msg.sender, value);
-    }
-
-    /**
-     * @dev Withdraw all value from a stash.
-     * @param sellToken Address of sell token.
-     * @param assetId Asset the stash is to be sold for.
-     */
-    function withdrawStashAll(address sellToken, bytes32 assetId)
-        external
-    {
-        // Get stash value.
-        mapping (address => uint) storage accountValue = tokenAssetIdAccountValue[sellToken][assetId];
-        uint value = accountValue[msg.sender];
-        // Ensure lock has value
-        if (value == 0) return;
-        // Search for previous.
-        mapping (address => address) storage accountLL = tokenAssetIdAccountLL[sellToken][assetId];
-        address prev = address(0);
-        address next = accountLL[prev];
-        while (next != msg.sender) {
-            prev = next;
-            next = accountLL[prev];
-        }
-        // Remove sender from list.
-        accountLL[prev] = accountLL[msg.sender];
-        // Update the stash value.
-        delete accountValue[msg.sender];
-        // Send the funds back.
-        safeTransfer(sellToken, msg.sender, value);
-        // Log info.
-        emit StashRemove(sellToken, msg.sender, assetId, value);
     }
 
     /**
@@ -421,37 +196,10 @@ contract AcuityAtomicSwapERC20 {
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Move value into sell lock.
-        stashRemove(sellToken, msg.sender, stashAssetId, value);
+        safeTransferFrom(sellToken, msg.sender, address(this), value);
         lockIdValue[lockId] = value;
         // Log info.
         emit SellLock(sellToken, msg.sender, recipient, hashedSecret, timeout, value, lockId, stashAssetId, buyLockId);
-    }
-
-    /**
-     * @dev Lock stashed value.
-     * @param sellToken Address of sell token.
-     * @param sender Sender of the value (checked for proxy).
-     * @param recipient Account that can unlock the lock.
-     * @param hashedSecret Hash of the secret.
-     * @param timeout Timestamp when the lock will open.
-     * @param stashAssetId Asset the stash is to be sold for.
-     * @param value Value from the stash to lock.
-     * @param buyLockId The buy lock this lock is responding to.
-     */
-    function lockSellProxy(address sellToken, address sender, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
-        external
-        checkProxy(sender)
-        notZero(value)
-    {
-        // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(sellToken, sender, recipient, hashedSecret, timeout));
-        // Ensure lockId is not already in use.
-        if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
-        // Move value into sell lock.
-        stashRemove(sellToken, sender, stashAssetId, value);
-        lockIdValue[lockId] = value;
-        // Log info.
-        emit SellLock(sellToken, sender, recipient, hashedSecret, timeout, value, lockId, stashAssetId, buyLockId);
     }
 
     /**
@@ -531,88 +279,6 @@ contract AcuityAtomicSwapERC20 {
     }
 
     /**
-     * @dev Transfer value from lock to recipient (called by recipient).
-     * @param token Address of token.
-     * @param sender Sender of the value.
-     * @param recipient Receiver of the value (checked for proxy).
-     * @param secret Secret to unlock the value.
-     * @param timeout Timeout of the lock.
-     */
-    function unlockByRecipientProxy(address token, address sender, address recipient, bytes32 secret, uint timeout)
-        external
-        checkProxy(recipient)
-    {
-        // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(token, sender, recipient, keccak256(abi.encodePacked(secret)), timeout));
-        // Get lock value.
-        uint value = lockIdValue[lockId];
-        // Check if the lock exists.
-        if (value == 0) revert LockNotFound(lockId);
-        // Check lock has not timed out.
-        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
-        // Delete lock.
-        delete lockIdValue[lockId];
-        // Transfer the value.
-        safeTransfer(token, recipient, value);
-        // Log info.
-        emit UnlockByRecipient(token, sender, recipient, lockId, secret);
-    }
-
-    /**
-     * @dev Transfer value from lock back to sender's stash.
-     * @param token Address of token.
-     * @param recipient Recipient of the value.
-     * @param hashedSecret Hash of secret recipient unlock the value.
-     * @param timeout Timeout of the lock.
-     */
-    function timeoutStash(address token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId)
-        external
-    {
-        // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(token, msg.sender, recipient, hashedSecret, timeout));
-        // Get lock value.
-        uint value = lockIdValue[lockId];
-        // Check if the lock exists.
-        if (value == 0) revert LockNotFound(lockId);
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
-        // Delete lock.
-        delete lockIdValue[lockId];
-        // Return funds.
-        stashAdd(token, msg.sender, stashAssetId, value);
-        // Log info.
-        emit Timeout(token, msg.sender, recipient, lockId);
-    }
-
-    /**
-     * @dev Transfer value from lock back to sender's stash.
-     * @param token Address of token.
-     * @param sender Sender of the value (checked for proxy).
-     * @param recipient Recipient of the value.
-     * @param hashedSecret Hash of secret recipient unlock the value.
-     * @param timeout Timeout of the lock.
-     */
-    function timeoutStashProxy(address token, address sender, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId)
-        external
-        checkProxy(sender)
-    {
-        // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(token, sender, recipient, hashedSecret, timeout));
-        // Get lock value.
-        uint value = lockIdValue[lockId];
-        // Check if the lock exists.
-        if (value == 0) revert LockNotFound(lockId);
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
-        // Delete lock.
-        delete lockIdValue[lockId];
-        // Return funds.
-        stashAdd(token, sender, stashAssetId, value);
-        // Log info.
-        emit Timeout(token, sender, recipient, lockId);
-    }
-
-    /**
      * @dev Transfer value from lock back to sender.
      * @param token Address of token.
      * @param recipient Recipient of the value.
@@ -636,91 +302,6 @@ contract AcuityAtomicSwapERC20 {
         safeTransfer(token, msg.sender, value);
         // Log info.
         emit Timeout(token, msg.sender, recipient, lockId);
-    }
-
-    /**
-     * @dev Transfer value from lock back to sender.
-     * @param token Address of token.
-     * @param sender Sender of the value (checked for proxy).
-     * @param recipient Recipient of the value.
-     * @param hashedSecret Hash of secret to unlock the value.
-     * @param timeout Timeout of the lock.
-     */
-    function timeoutValueProxy(address token, address sender, address recipient, bytes32 hashedSecret, uint timeout)
-        external
-        checkProxy(sender)
-    {
-        // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(token, sender, recipient, hashedSecret, timeout));
-        // Get lock value.
-        uint value = lockIdValue[lockId];
-        // Check if the lock exists.
-        if (value == 0) revert LockNotFound(lockId);
-        // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
-        // Delete lock.
-        delete lockIdValue[lockId];
-        // Transfer the value.
-        safeTransfer(token, sender, value);
-        // Log info.
-        emit Timeout(token, sender, recipient, lockId);
-    }
-
-    /**
-     * @dev Get a list of deposits for a specific asset.
-     * @param token Address of token stashed.
-     * @param assetId Asset the stash is to be sold for.
-     * @param offset Number of deposits to skip from the start of the list.
-     * @param limit Maximum number of deposits to return.
-     */
-    function getStashes(address token, bytes32 assetId, uint offset, uint limit)
-        external
-        view
-        returns (address[] memory accounts, uint[] memory values)
-    {
-        mapping (address => address) storage accountLL = tokenAssetIdAccountLL[token][assetId];
-        mapping (address => uint) storage accountValue = tokenAssetIdAccountValue[token][assetId];
-        // Find first account after offset.
-        address account = address(0);
-        address next = accountLL[account];
-        while (offset != 0) {
-            if (next == address(0)) {
-                break;
-            }
-            account = next;
-            next = accountLL[account];
-            --offset;
-        }
-        // Count how many accounts to return.
-        uint _limit = 0;
-        while (next != address(0) && _limit < limit) {
-            next = accountLL[next];
-            ++_limit;
-        }
-        // Allocate the arrays.
-        accounts = new address[](_limit);
-        values = new uint[](_limit);
-        // Populate the arrays.
-        for (uint i = 0; i != _limit; ++i) {
-            account = accountLL[account];
-            accounts[i] = account;
-            values[i] = accountValue[account];
-        }
-    }
-
-    /**
-     * @dev Get value held in a stash.
-     * @param token Address of token stashed.
-     * @param assetId Asset the stash is to be sold for.
-     * @param seller Owner of the stash.
-     * @return value Value held in the stash.
-     */
-    function getStashValue(address token, bytes32 assetId, address seller)
-        external
-        view
-        returns (uint value)
-    {
-        value = tokenAssetIdAccountValue[token][assetId][seller];
     }
 
     /**
