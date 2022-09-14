@@ -4,4 +4,4 @@ set -e
 
 . ~/.nix-profile/etc/profile.d/nix.sh
 export DAPP_BUILD_OPTIMIZE_RUNS=10000
-dapp --use solc:0.8.15 --verbose --optimize test
+dapp --use solc:0.8.17 --verbose --optimize test
