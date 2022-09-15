@@ -22,7 +22,7 @@ contract AcuityAtomicSwapERC20 {
      * @param sellAssetId assetId the value is paying for.
      * @param sellPrice Price the asset is being sold for.
      */
-    event BuyLock(address indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice);
+    event BuyLock(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice);
 
     /**
      * @dev Value has been locked.
@@ -36,7 +36,7 @@ contract AcuityAtomicSwapERC20 {
      * @param buyAssetId The asset of the buy lock this lock is responding to.
      * @param buyLockId The buy lock this lock is responding to.
      */
-    event SellLock(address indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 buyAssetId, bytes32 buyLockId);
+    event SellLock(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 buyAssetId, bytes32 buyLockId);
 
     /**
      * @dev Lock has been declined by the recipient.
@@ -45,7 +45,7 @@ contract AcuityAtomicSwapERC20 {
      * @param recipient Account to receive the value.
      * @param lockId Intrinisic lockId.
      */
-    event DeclineByRecipient(address indexed token, address indexed sender, address indexed recipient, bytes32 lockId);
+    event DeclineByRecipient(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 lockId);
 
     /**
      * @dev Value has been unlocked by the sender.
@@ -55,7 +55,7 @@ contract AcuityAtomicSwapERC20 {
      * @param lockId Intrinisic lockId.
      * @param secret The secret used to unlock the value.
      */
-    event UnlockBySender(address indexed token, address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
+    event UnlockBySender(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
 
     /**
      * @dev Value has been unlocked by the recipient.
@@ -65,7 +65,7 @@ contract AcuityAtomicSwapERC20 {
      * @param lockId Intrinisic lockId.
      * @param secret The secret used to unlock the value.
      */
-    event UnlockByRecipient(address indexed token, address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
+    event UnlockByRecipient(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
 
     /**
      * @dev Value has been timed out.
@@ -74,7 +74,7 @@ contract AcuityAtomicSwapERC20 {
      * @param recipient Account to receive the value.
      * @param lockId Intrinisic lockId.
      */
-    event Timeout(address indexed token, address indexed sender, address indexed recipient, bytes32 lockId);
+    event Timeout(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 lockId);
 
     /**
      * @dev No value was provided.
@@ -108,7 +108,7 @@ contract AcuityAtomicSwapERC20 {
     /**
      * @dev
      */
-    error TokenTransferFailed(address token, address from, address to, uint value);
+    error TokenTransferFailed(ERC20 token, address from, address to, uint value);
 
     /**
      * @dev Ensure value is nonzero.
@@ -122,20 +122,20 @@ contract AcuityAtomicSwapERC20 {
     /**
      * @dev
      */
-    function safeTransfer(address token, address to, uint value)
+    function safeTransfer(ERC20 token, address to, uint value)
         internal
     {
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20.transfer.selector, to, value));
+        (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(ERC20.transfer.selector, to, value));
         if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, address(this), to, value);
     }
 
     /**
      * @dev
      */
-    function safeTransferFrom(address token, address from, address to, uint value)
+    function safeTransferFrom(ERC20 token, address from, address to, uint value)
         internal
     {
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(ERC20.transferFrom.selector, from, to, value));
+        (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(ERC20.transferFrom.selector, from, to, value));
         if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, from, to, value);
     }
 
@@ -149,7 +149,7 @@ contract AcuityAtomicSwapERC20 {
      * @param sellPrice Price the asset is being sold for.
      * @param value Value of token to lock.
      */
-    function lockBuy(address token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, uint value)
+    function lockBuy(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, uint value)
         external
         notZero(value)
     {
@@ -174,7 +174,7 @@ contract AcuityAtomicSwapERC20 {
      * @param value Value from the stash to lock.
      * @param buyLockId The buy lock this lock is responding to.
      */
-    function lockSell(address sellToken, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
+    function lockSell(ERC20 sellToken, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
         external
         notZero(value)
     {
@@ -196,7 +196,7 @@ contract AcuityAtomicSwapERC20 {
      * @param hashedSecret Hash of the secret.
      * @param timeout Timeout of the lock.
      */
-    function declineByRecipient(address token, address sender, bytes32 hashedSecret, uint timeout)
+    function declineByRecipient(ERC20 token, address sender, bytes32 hashedSecret, uint timeout)
         external
     {
         // Calculate lockId.
@@ -220,7 +220,7 @@ contract AcuityAtomicSwapERC20 {
      * @param secret Secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function unlockBySender(address token, address recipient, bytes32 secret, uint timeout)
+    function unlockBySender(ERC20 token, address recipient, bytes32 secret, uint timeout)
         external
     {
         // Calculate lockId.
@@ -246,7 +246,7 @@ contract AcuityAtomicSwapERC20 {
      * @param secret Secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function unlockByRecipient(address token, address sender, bytes32 secret, uint timeout)
+    function unlockByRecipient(ERC20 token, address sender, bytes32 secret, uint timeout)
         external
     {
         // Calculate lockId.
@@ -272,7 +272,7 @@ contract AcuityAtomicSwapERC20 {
      * @param hashedSecret Hash of secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutValue(address token, address recipient, bytes32 hashedSecret, uint timeout)
+    function timeoutValue(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout)
         external
     {
         // Calculate lockId.
@@ -300,7 +300,7 @@ contract AcuityAtomicSwapERC20 {
      * @param timeout Time after which sender can retrieve the value.
      * @return value Value held in the lock.
      */
-    function getLockValue(address token, address sender, address recipient, bytes32 hashedSecret, uint timeout)
+    function getLockValue(ERC20 token, address sender, address recipient, bytes32 hashedSecret, uint timeout)
         external
         view
         returns (uint value)

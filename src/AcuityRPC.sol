@@ -5,7 +5,11 @@ import "./ERC20.sol";
 
 contract AcuityRPC {
 
-    function getAccountBalances(address[] calldata accounts) view external returns (uint[] memory values) {
+    function getAccountBalances(address[] calldata accounts)
+        view
+        external
+        returns (uint[] memory values)
+    {
         values = new uint[](accounts.length);
 
         for (uint i = 0; i != accounts.length; i++) {
@@ -13,13 +17,21 @@ contract AcuityRPC {
         }
     }
 
-    function getStaticTokenMetadata(ERC20 token) view external returns (string memory name, string memory symbol, uint8 decimals) {
+    function getStaticTokenMetadata(ERC20 token)
+        view
+        external
+        returns (string memory name, string memory symbol, uint8 decimals)
+    {
         name = token.name();
         symbol = token.symbol();
         decimals = token.decimals();
     }
 
-    function getTokenAccountBalances(ERC20 token, address[] calldata accounts) view external returns (uint[] memory values) {
+    function getTokenAccountBalances(ERC20 token, address[] calldata accounts)
+        view
+        external
+        returns (uint[] memory values)
+    {
         values = new uint[](accounts.length);
 
         for (uint i = 0; i != accounts.length; i++) {
@@ -27,7 +39,11 @@ contract AcuityRPC {
         }
     }
 
-    function getAccountTokenBalances(address account, ERC20[] calldata tokens) view external returns (uint[] memory values) {
+    function getAccountTokenBalances(address account, ERC20[] calldata tokens)
+        view
+        external
+        returns (uint[] memory values)
+    {
         values = new uint[](tokens.length);
 
         for (uint i = 0; i != tokens.length; i++) {
@@ -35,7 +51,11 @@ contract AcuityRPC {
         }
     }
 
-    function getAccountTokenAllowances(address account, address spender, ERC20[] calldata tokens) view external returns (uint[] memory values) {
+    function getAccountTokenAllowances(address account, address spender, ERC20[] calldata tokens)
+        view
+        external
+        returns (uint[] memory values)
+    {
         values = new uint[](tokens.length);
 
         for (uint i = 0; i != tokens.length; i++) {
