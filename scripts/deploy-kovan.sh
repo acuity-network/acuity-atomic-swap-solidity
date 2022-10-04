@@ -13,3 +13,4 @@ export ETH_RPC_URL=https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161
 dapp create AcuityAccount
 dapp create AcuityAtomicSwap
 dapp create AcuityAtomicSwapERC20
+dapp create AcuityRPC

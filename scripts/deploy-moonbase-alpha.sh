@@ -13,3 +13,4 @@ export ETH_RPC_URL=https://rpc.api.moonbase.moonbeam.network
 dapp create AcuityAccount
 dapp create AcuityAtomicSwap
 dapp create AcuityAtomicSwapERC20
+dapp create AcuityRPC

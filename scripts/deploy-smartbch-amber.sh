@@ -13,3 +13,4 @@ export ETH_RPC_URL=http://35.220.203.194:8545
 dapp create AcuityAccount
 dapp create AcuityAtomicSwap
 dapp create AcuityAtomicSwapERC20
+dapp create AcuityRPC
