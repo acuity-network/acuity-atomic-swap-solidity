@@ -20,7 +20,7 @@ contract AcuityRPC {
     function getStaticTokenMetadata(ERC20 token)
         view
         external
-        returns (string memory name, string memory symbol, uint8 decimals)
+        returns (string memory name, string memory symbol, uint decimals)
     {
         name = token.name();
         symbol = token.symbol();

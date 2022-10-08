@@ -78,11 +78,6 @@ contract AcuityAtomicSwapERC20 {
     event Timeout(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 lockId);
 
     /**
-     * @dev No value was provided.
-     */
-    error ZeroValue();
-
-    /**
      * @dev Value has already been locked with this lockId.
      * @param lockId Lock already locked.
      */
@@ -110,15 +105,6 @@ contract AcuityAtomicSwapERC20 {
      * @dev
      */
     error TokenTransferFailed(ERC20 token, address from, address to, uint value);
-
-    /**
-     * @dev Ensure value is nonzero.
-     * @param value Value to ensure not zero.
-     */
-    modifier notZero(uint value) {
-        if (value == 0) revert ZeroValue();
-        _;
-    }
 
     /**
      * @dev
@@ -153,7 +139,6 @@ contract AcuityAtomicSwapERC20 {
      */
     function lockBuy(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, bytes32 foreignAddress, uint value)
         external
-        notZero(value)
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(token, msg.sender, recipient, hashedSecret, timeout));
@@ -178,7 +163,6 @@ contract AcuityAtomicSwapERC20 {
      */
     function lockSell(ERC20 sellToken, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
         external
-        notZero(value)
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(sellToken, msg.sender, recipient, hashedSecret, timeout));

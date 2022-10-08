@@ -70,11 +70,6 @@ contract AcuityAtomicSwap {
     event Timeout(address indexed sender, address indexed recipient, bytes32 lockId);
 
     /**
-     * @dev No value was provided.
-     */
-    error ZeroValue();
-
-    /**
      * @dev Value has already been locked with this lockId.
      * @param lockId Lock already locked.
      */
@@ -99,14 +94,6 @@ contract AcuityAtomicSwap {
     error LockNotTimedOut(bytes32 lockId);
 
     /**
-     * @dev Ensure value is nonzero.
-     */
-    modifier notZero {
-        if (msg.value == 0) revert ZeroValue();
-        _;
-    }
-
-    /**
      * @dev Lock value.
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
@@ -118,7 +105,6 @@ contract AcuityAtomicSwap {
     function lockBuy(address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, bytes32 foreignAddress)
         external
         payable
-        notZero
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));
@@ -141,7 +127,6 @@ contract AcuityAtomicSwap {
     function lockSell(address recipient, bytes32 hashedSecret, uint timeout, bytes32 buyAssetId, bytes32 buyLockId)
         external
         payable
-        notZero
     {
         // Calculate lockId.
         bytes32 lockId = keccak256(abi.encode(msg.sender, recipient, hashedSecret, timeout));

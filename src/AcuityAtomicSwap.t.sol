@@ -44,14 +44,6 @@ contract AcuityAtomicSwapTest is DSTest {
         account3 = new AccountProxy(acuityAtomicSwap);
     }
 
-    function testControllockBuyZeroValue() public {
-        acuityAtomicSwap.lockBuy{value: 1}(address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"");
-    }
-
-    function testFaillockBuyZeroValue() public {
-        acuityAtomicSwap.lockBuy{value: 0}(address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"");
-    }
-
     function testControllockBuyLockAlreadyExists() public {
         acuityAtomicSwap.lockBuy{value: 1}(address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"");
         acuityAtomicSwap.lockBuy{value: 1}(address(account0), hex"3456", block.timestamp + 1, hex"1234", 1, hex"");

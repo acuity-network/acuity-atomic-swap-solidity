@@ -85,14 +85,6 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         dummyToken = new DummyToken(accounts);
     }
 
-    function testControlLockBuyZeroValue() public {
-        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"", 1);
-    }
-
-    function testFailLockBuyZeroValue() public {
-        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"", 0);
-    }
-
     function testControlLockBuyLockAlreadyExists() public {
         acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"", 1);
         acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"3456", block.timestamp + 1, hex"1234", 1, hex"", 1);
@@ -111,14 +103,6 @@ contract AcuityAtomicSwapERC20Test is DSTest {
 
         acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hashedSecret, timeout, hex"1234", 1, hex"", value);
         assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), value);
-    }
-
-    function testControlLockSellZeroValue() public {
-        acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 50, hex"1234");
-    }
-
-    function testFailLockSellZeroValue() public {
-        acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 0, hex"1234");
     }
 
     function testControlLockSellLockAlreadyExists() public {
