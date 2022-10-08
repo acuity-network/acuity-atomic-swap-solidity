@@ -127,17 +127,17 @@ contract AcuityAtomicSwapERC20 {
     }
 
     /**
-     * @dev Lock value.
-     * @param recipient Account that can unlock the lock.
+    * @dev Lock value to buy from a sell order.
      * @param token Address of token to lock.
+     * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
-     * @param sellAssetId assetId the value is paying for.
-     * @param sellPrice Price the asset is being sold for.
-     * @param sellAddress Address of the buyer on the sell blockchain.
      * @param value Value of token to lock.
+     * @param sellAssetId assetId the buyer is buying
+     * @param sellPrice Unit price the buyer is paying for the asset.
+     * @param sellAddress Address for the buyer to receive the asset on the sell blockchain.
      */
-    function lockBuy(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, bytes32 sellAddress, uint value)
+    function lockBuy(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 sellAssetId, uint sellPrice, bytes32 sellAddress)
         external
     {
         // Calculate lockId.
@@ -152,27 +152,27 @@ contract AcuityAtomicSwapERC20 {
     }
 
     /**
-     * @dev Lock stashed value.
-     * @param sellToken Address of sell token.
+    * @dev Lock value to sell to a buy lock.
+     * @param token Address of token to lock.
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
-     * @param stashAssetId Asset the stash is to be sold for.
-     * @param value Value from the stash to lock.
+     * @param value Value of token to lock.
+     * @param buyAssetId The asset of the buy lock this lock is responding to.
      * @param buyLockId The buy lock this lock is responding to.
      */
-    function lockSell(ERC20 sellToken, address recipient, bytes32 hashedSecret, uint timeout, bytes32 stashAssetId, uint value, bytes32 buyLockId)
+    function lockSell(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 buyAssetId, bytes32 buyLockId)
         external
     {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(sellToken, msg.sender, recipient, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encode(token, msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Move value into sell lock.
-        safeTransferFrom(sellToken, msg.sender, address(this), value);
+        safeTransferFrom(token, msg.sender, address(this), value);
         lockIdValue[lockId] = value;
         // Log info.
-        emit SellLock(sellToken, msg.sender, recipient, hashedSecret, timeout, value, lockId, stashAssetId, buyLockId);
+        emit SellLock(token, msg.sender, recipient, hashedSecret, timeout, value, lockId, buyAssetId, buyLockId);
     }
 
     /**

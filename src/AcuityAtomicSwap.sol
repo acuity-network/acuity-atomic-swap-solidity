@@ -16,9 +16,9 @@ contract AcuityAtomicSwap {
      * @param timeout Time after which sender can retrieve the value.
      * @param value Value being locked.
      * @param lockId Intrinisic lockId.
-     * @param sellAssetId assetId the value is paying for.
-     * @param sellPrice Price the asset is being sold for.
-     * @param sellAddress Address of the buyer on the sell blockchain.
+     * @param sellAssetId assetId the buyer is buying
+     * @param sellPrice Unit price the buyer is paying for the asset.
+     * @param sellAddress Address for the buyer to receive the asset on the sell blockchain.
      */
     event BuyLock(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice, bytes32 sellAddress);
 
@@ -94,7 +94,7 @@ contract AcuityAtomicSwap {
     error LockNotTimedOut(bytes32 lockId);
 
     /**
-     * @dev Lock value.
+     * @dev Lock value to buy from a sell order.
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
@@ -117,11 +117,11 @@ contract AcuityAtomicSwap {
     }
 
     /**
-     * @dev Lock stashed value.
+     * @dev Lock value to sell to a buy lock.
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
-     * @param buyAssetId Asset the stash is to be sold for.
+     * @param buyAssetId The asset of the buy lock this lock is responding to.
      * @param buyLockId The buy lock this lock is responding to.
      */
     function lockSell(address recipient, bytes32 hashedSecret, uint timeout, bytes32 buyAssetId, bytes32 buyLockId)
