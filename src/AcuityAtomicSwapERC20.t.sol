@@ -86,21 +86,21 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     }
 
     function testControlLockBuyZeroValue() public {
-        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, 1);
+        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"", 1);
     }
 
     function testFailLockBuyZeroValue() public {
-        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, 0);
+        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"", 0);
     }
 
     function testControlLockBuyLockAlreadyExists() public {
-        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, 1);
-        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"3456", block.timestamp + 1, hex"1234", 1, 1);
+        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"", 1);
+        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"3456", block.timestamp + 1, hex"1234", 1, hex"", 1);
     }
 
     function testFailLockBuyLockAlreadyExists() public {
-        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, 1);
-        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, 1);
+        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"", 1);
+        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hex"1234", block.timestamp + 1, hex"1234", 1, hex"", 1);
     }
 
     function testLockBuy() public {
@@ -109,7 +109,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint timeout = block.timestamp + 1;
         uint value = 10;
 
-        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hashedSecret, timeout, hex"1234", 1, value);
+        acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hashedSecret, timeout, hex"1234", 1, hex"", value);
         assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), value);
     }
 

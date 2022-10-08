@@ -21,8 +21,9 @@ contract AcuityAtomicSwapERC20 {
      * @param lockId Intrinisic lockId.
      * @param sellAssetId assetId the value is paying for.
      * @param sellPrice Price the asset is being sold for.
+     * @param foreignAddress Address of the buyer on the sell blockchain.
      */
-    event BuyLock(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice);
+    event BuyLock(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice, bytes32 foreignAddress);
 
     /**
      * @dev Value has been locked.
@@ -147,9 +148,10 @@ contract AcuityAtomicSwapERC20 {
      * @param timeout Timestamp when the lock will open.
      * @param sellAssetId assetId the value is paying for.
      * @param sellPrice Price the asset is being sold for.
+     * @param foreignAddress Address of the buyer on the sell blockchain.
      * @param value Value of token to lock.
      */
-    function lockBuy(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, uint value)
+    function lockBuy(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, bytes32 foreignAddress, uint value)
         external
         notZero(value)
     {
@@ -161,7 +163,7 @@ contract AcuityAtomicSwapERC20 {
         safeTransferFrom(token, msg.sender, address(this), value);
         lockIdValue[lockId] = value;
         // Log info.
-        emit BuyLock(token, msg.sender, recipient, hashedSecret, timeout, value, lockId, sellAssetId, sellPrice);
+        emit BuyLock(token, msg.sender, recipient, hashedSecret, timeout, value, lockId, sellAssetId, sellPrice, foreignAddress);
     }
 
     /**
