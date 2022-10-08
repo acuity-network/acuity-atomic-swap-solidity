@@ -18,9 +18,9 @@ contract AcuityAtomicSwap {
      * @param lockId Intrinisic lockId.
      * @param sellAssetId assetId the value is paying for.
      * @param sellPrice Price the asset is being sold for.
-     * @param foreignAddress Address of the buyer on the sell blockchain.
+     * @param sellAddress Address of the buyer on the sell blockchain.
      */
-    event BuyLock(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice, bytes32 foreignAddress);
+    event BuyLock(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice, bytes32 sellAddress);
 
     /**
      * @dev Value has been locked.
@@ -98,11 +98,11 @@ contract AcuityAtomicSwap {
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
-     * @param sellAssetId assetId the value is paying for.
-     * @param sellPrice Price the asset is being sold for.
-     * @param foreignAddress Address of the buyer on the sell blockchain.
+     * @param sellAssetId assetId the buyer is buying
+     * @param sellPrice Unit price the buyer is paying for the asset.
+     * @param sellAddress Address for the buyer to receive the asset on the sell blockchain.
      */
-    function lockBuy(address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, bytes32 foreignAddress)
+    function lockBuy(address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, bytes32 sellAddress)
         external
         payable
     {
@@ -113,16 +113,16 @@ contract AcuityAtomicSwap {
         // Move value into buy lock.
         lockIdValue[lockId] = msg.value;
         // Log info.
-        emit BuyLock(msg.sender, recipient, hashedSecret, timeout, msg.value, lockId, sellAssetId, sellPrice, foreignAddress);
+        emit BuyLock(msg.sender, recipient, hashedSecret, timeout, msg.value, lockId, sellAssetId, sellPrice, sellAddress);
     }
 
     /**
      * @dev Lock stashed value.
-     * @param buyLockId The buy lock this lock is responding to.
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timestamp when the lock will open.
      * @param buyAssetId Asset the stash is to be sold for.
+     * @param buyLockId The buy lock this lock is responding to.
      */
     function lockSell(address recipient, bytes32 hashedSecret, uint timeout, bytes32 buyAssetId, bytes32 buyLockId)
         external

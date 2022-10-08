@@ -19,11 +19,11 @@ contract AcuityAtomicSwapERC20 {
      * @param timeout Time after which sender can retrieve the value.
      * @param value Value being locked.
      * @param lockId Intrinisic lockId.
-     * @param sellAssetId assetId the value is paying for.
-     * @param sellPrice Price the asset is being sold for.
-     * @param foreignAddress Address of the buyer on the sell blockchain.
+     * @param sellAssetId assetId the buyer is buying
+     * @param sellPrice Unit price the buyer is paying for the asset.
+     * @param sellAddress Address for the buyer to receive the asset on the sell blockchain.
      */
-    event BuyLock(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice, bytes32 foreignAddress);
+    event BuyLock(ERC20 indexed token, address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 lockId, bytes32 sellAssetId, uint sellPrice, bytes32 sellAddress);
 
     /**
      * @dev Value has been locked.
@@ -134,10 +134,10 @@ contract AcuityAtomicSwapERC20 {
      * @param timeout Timestamp when the lock will open.
      * @param sellAssetId assetId the value is paying for.
      * @param sellPrice Price the asset is being sold for.
-     * @param foreignAddress Address of the buyer on the sell blockchain.
+     * @param sellAddress Address of the buyer on the sell blockchain.
      * @param value Value of token to lock.
      */
-    function lockBuy(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, bytes32 foreignAddress, uint value)
+    function lockBuy(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, bytes32 sellAddress, uint value)
         external
     {
         // Calculate lockId.
@@ -148,7 +148,7 @@ contract AcuityAtomicSwapERC20 {
         safeTransferFrom(token, msg.sender, address(this), value);
         lockIdValue[lockId] = value;
         // Log info.
-        emit BuyLock(token, msg.sender, recipient, hashedSecret, timeout, value, lockId, sellAssetId, sellPrice, foreignAddress);
+        emit BuyLock(token, msg.sender, recipient, hashedSecret, timeout, value, lockId, sellAssetId, sellPrice, sellAddress);
     }
 
     /**
