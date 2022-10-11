@@ -56,7 +56,7 @@ contract AcuityAtomicSwapTest is DSTest {
 
     function testlockBuy() public {
         bytes32 secret = hex"1234";
-        bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+        bytes32 hashedSecret = keccak256(abi.encode(secret));
         uint timeout = block.timestamp + 1;
         uint value = 10;
 

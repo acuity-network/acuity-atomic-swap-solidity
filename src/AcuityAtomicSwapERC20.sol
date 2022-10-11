@@ -189,7 +189,7 @@ contract AcuityAtomicSwapERC20 {
         external
     {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(token, msg.sender, recipient, keccak256(abi.encodePacked(secret)), timeout));
+        bytes32 lockId = keccak256(abi.encode(token, msg.sender, recipient, keccak256(abi.encode(secret)), timeout));
         // Get lock value.
         uint value = lockIdValue[lockId];
         // Check if the lock exists.
@@ -216,7 +216,7 @@ contract AcuityAtomicSwapERC20 {
         external
     {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(token, sender, msg.sender, keccak256(abi.encodePacked(secret)), timeout));
+        bytes32 lockId = keccak256(abi.encode(token, sender, msg.sender, keccak256(abi.encode(secret)), timeout));
         // Get lock value.
         uint value = lockIdValue[lockId];
         // Check if the lock exists.

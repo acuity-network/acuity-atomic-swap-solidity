@@ -97,7 +97,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
 
     function testLockBuy() public {
         bytes32 secret = hex"1234";
-        bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+        bytes32 hashedSecret = keccak256(abi.encode(secret));
         uint timeout = block.timestamp + 1;
         uint value = 10;
 
@@ -120,7 +120,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
     function testLockSell() public {
         bytes32 assetId = hex"1234";
         bytes32 secret = hex"1234";
-        bytes32 hashedSecret = keccak256(abi.encodePacked(secret));
+        bytes32 hashedSecret = keccak256(abi.encode(secret));
         uint timeout = block.timestamp + 1;
         uint value = 10;
 
