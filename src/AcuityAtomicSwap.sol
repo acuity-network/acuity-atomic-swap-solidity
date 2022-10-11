@@ -213,7 +213,7 @@ contract AcuityAtomicSwap {
      * @param hashedSecret Hash of secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutValue(address recipient, bytes32 hashedSecret, uint timeout)
+    function timeoutBySender(address recipient, bytes32 hashedSecret, uint timeout)
         external
     {
         // Calculate lockId.

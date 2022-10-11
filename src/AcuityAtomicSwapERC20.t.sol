@@ -291,7 +291,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint timeout = block.timestamp;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.timeoutValue(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
     }
 
     function testFailTimeoutValueLockNotFound() public {
@@ -301,8 +301,8 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint timeout = block.timestamp;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.timeoutValue(dummyToken, address(account0), hashedSecret, timeout);
-        acuityAtomicSwapERC20.timeoutValue(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
     }
 
     function testControlTimeoutValueNotTimedOut() public {
@@ -312,7 +312,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint timeout = block.timestamp;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.timeoutValue(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
     }
 
     function testFailTimeoutValueNotTimedOut() public {
@@ -322,7 +322,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint timeout = block.timestamp + 1;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.timeoutValue(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
     }
 
     function testTimeoutValue() public {
@@ -336,7 +336,7 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), value);
 
         uint startBalance = dummyToken.balanceOf(address(this));
-        acuityAtomicSwapERC20.timeoutValue(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
         assertEq(dummyToken.balanceOf(address(this)), startBalance + value);
     }
 

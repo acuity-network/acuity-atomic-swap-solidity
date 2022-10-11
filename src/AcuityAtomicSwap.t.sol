@@ -227,7 +227,7 @@ contract AcuityAtomicSwapTest is DSTest {
         uint timeout = block.timestamp;
 
         acuityAtomicSwap.lockSell{value: 10}(address(account0), hashedSecret, timeout, assetId, hex"1234");
-        acuityAtomicSwap.timeoutValue(address(account0), hashedSecret, timeout);
+        acuityAtomicSwap.timeoutBySender(address(account0), hashedSecret, timeout);
     }
 
     function testFailTimeoutValueLockNotFound() public {
@@ -237,8 +237,8 @@ contract AcuityAtomicSwapTest is DSTest {
         uint timeout = block.timestamp;
 
         acuityAtomicSwap.lockSell{value: 10}(address(account0), hashedSecret, timeout, assetId, hex"1234");
-        acuityAtomicSwap.timeoutValue(address(account0), hashedSecret, timeout);
-        acuityAtomicSwap.timeoutValue(address(account0), hashedSecret, timeout);
+        acuityAtomicSwap.timeoutBySender(address(account0), hashedSecret, timeout);
+        acuityAtomicSwap.timeoutBySender(address(account0), hashedSecret, timeout);
     }
 
     function testControlTimeoutValueNotTimedOut() public {
@@ -248,7 +248,7 @@ contract AcuityAtomicSwapTest is DSTest {
         uint timeout = block.timestamp;
 
         acuityAtomicSwap.lockSell{value: 10}(address(account0), hashedSecret, timeout, assetId, hex"1234");
-        acuityAtomicSwap.timeoutValue(address(account0), hashedSecret, timeout);
+        acuityAtomicSwap.timeoutBySender(address(account0), hashedSecret, timeout);
     }
 
     function testFailTimeoutValueNotTimedOut() public {
@@ -258,7 +258,7 @@ contract AcuityAtomicSwapTest is DSTest {
         uint timeout = block.timestamp + 1;
 
         acuityAtomicSwap.lockSell{value: 10}(address(account0), hashedSecret, timeout, assetId, hex"1234");
-        acuityAtomicSwap.timeoutValue(address(account0), hashedSecret, timeout);
+        acuityAtomicSwap.timeoutBySender(address(account0), hashedSecret, timeout);
     }
 
     function testTimeoutValue() public {
@@ -271,7 +271,7 @@ contract AcuityAtomicSwapTest is DSTest {
         acuityAtomicSwap.lockSell{value: value}(address(account0), hashedSecret, timeout, assetId, hex"1234");
         assertEq(acuityAtomicSwap.getLockValue(address(this), address(account0), hashedSecret, timeout), value);
         uint startBalance = address(this).balance;
-        acuityAtomicSwap.timeoutValue(address(account0), hashedSecret, timeout);
+        acuityAtomicSwap.timeoutBySender(address(account0), hashedSecret, timeout);
         assertEq(address(this).balance, startBalance + value);
     }
 

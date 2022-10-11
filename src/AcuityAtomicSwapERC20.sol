@@ -239,7 +239,7 @@ contract AcuityAtomicSwapERC20 {
      * @param hashedSecret Hash of secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function timeoutValue(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout)
+    function timeoutBySender(ERC20 token, address recipient, bytes32 hashedSecret, uint timeout)
         external
     {
         // Calculate lockId.
