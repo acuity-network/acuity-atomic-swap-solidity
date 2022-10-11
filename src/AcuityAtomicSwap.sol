@@ -17,9 +17,8 @@ contract AcuityAtomicSwap {
      * @param value Value being locked.
      * @param sellAssetId assetId the buyer is buying
      * @param sellPrice Unit price the buyer is paying for the asset.
-     * @param sellAddress Address for the buyer to receive the asset on the sell blockchain.
      */
-    event BuyLock(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 sellAssetId, uint sellPrice, bytes32 sellAddress);
+    event BuyLock(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 sellAssetId, uint sellPrice);
 
     /**
      * @dev Value has been locked.
@@ -98,9 +97,8 @@ contract AcuityAtomicSwap {
      * @param timeout Timestamp when the lock will open.
      * @param sellAssetId assetId the buyer is buying
      * @param sellPrice Unit price the buyer is paying for the asset.
-     * @param sellAddress Address for the buyer to receive the asset on the sell blockchain.
      */
-    function lockBuy(address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice, bytes32 sellAddress)
+    function lockBuy(address recipient, bytes32 hashedSecret, uint timeout, bytes32 sellAssetId, uint sellPrice)
         external
         payable
     {
@@ -111,7 +109,7 @@ contract AcuityAtomicSwap {
         // Move value into buy lock.
         lockIdValue[lockId] = msg.value;
         // Log info.
-        emit BuyLock(msg.sender, recipient, hashedSecret, timeout, msg.value, sellAssetId, sellPrice, sellAddress);
+        emit BuyLock(msg.sender, recipient, hashedSecret, timeout, msg.value, sellAssetId, sellPrice);
     }
 
     /**
