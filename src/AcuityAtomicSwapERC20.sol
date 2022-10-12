@@ -104,7 +104,7 @@ contract AcuityAtomicSwapERC20 {
     error TokenTransferFailed(ERC20 token, address from, address to, uint value);
 
     /**
-    * @dev Lock value to buy from a sell order.
+     * @dev Lock value to buy from a sell order.
      * @param token Address of token to lock.
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
@@ -129,7 +129,7 @@ contract AcuityAtomicSwapERC20 {
     }
 
     /**
-    * @dev Lock value to sell to a buy lock.
+     * @dev Lock value to sell to a buy lock.
      * @param token Address of token to lock.
      * @param recipient Account that can unlock the lock.
      * @param hashedSecret Hash of the secret.
