@@ -121,11 +121,11 @@ contract AcuityAtomicSwapERC20 {
         bytes32 lockId = keccak256(abi.encode(token, msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
+        // Lock value.
+        lockIdValue[lockId] = value;
         // Transfer value.
         (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(ERC20.transferFrom.selector, msg.sender, address(this), value));
         if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TransferInFailed(token, msg.sender, value);
-        // Lock value.
-        lockIdValue[lockId] = value;
         // Log info.
         emit LockBuy(token, msg.sender, recipient, hashedSecret, timeout, value, sellAssetId, sellPrice);
     }
@@ -147,11 +147,11 @@ contract AcuityAtomicSwapERC20 {
         bytes32 lockId = keccak256(abi.encode(token, msg.sender, recipient, hashedSecret, timeout));
         // Ensure lockId is not already in use.
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
+        // Lock value.
+        lockIdValue[lockId] = value;
         // Transfer value.
         (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(ERC20.transferFrom.selector, msg.sender, address(this), value));
         if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TransferInFailed(token, msg.sender, value);
-        // Lock value.
-        lockIdValue[lockId] = value;
         // Log info.
         emit LockSell(token, msg.sender, recipient, hashedSecret, timeout, value, buyAssetId, buyLockId);
     }
