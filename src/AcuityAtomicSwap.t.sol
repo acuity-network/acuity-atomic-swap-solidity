@@ -65,6 +65,30 @@ contract AcuityAtomicSwapTest is DSTest {
         assertEq(acuityAtomicSwap.getLockValue(lockId), value);
     }
 
+    function testControlLockSellLockAlreadyExists() public {
+        uint value = 50;
+        acuityAtomicSwap.lockSell{value: value}(address(account0), hex"1234", block.timestamp + 1, hex"1234", hex"1234");
+        acuityAtomicSwap.lockSell{value: value}(address(account0), hex"3456", block.timestamp + 1, hex"1234", hex"1234");
+    }
+
+    function testFailLockSellLockAlreadyExists() public {
+        uint value = 50;
+        acuityAtomicSwap.lockSell{value: value}(address(account0), hex"1234", block.timestamp + 1, hex"1234", hex"1234");
+        acuityAtomicSwap.lockSell{value: value}(address(account0), hex"1234", block.timestamp + 1, hex"1234", hex"1234");
+    }
+
+    function testLockSell() public {
+        bytes32 assetId = hex"1234";
+        bytes32 secret = hex"1234";
+        bytes32 hashedSecret = keccak256(abi.encode(secret));
+        uint timeout = block.timestamp + 1;
+        uint value = 10;
+
+        acuityAtomicSwap.lockSell{value: value}(address(account0), hashedSecret, timeout, assetId, hex"1234");
+        bytes32 lockId = keccak256(abi.encode(address(this), address(account0), hashedSecret, timeout));
+        assertEq(acuityAtomicSwap.getLockValue(lockId), value);
+    }
+
     function testControlDeclineLockNotFound() public {
         bytes32 assetId = hex"1234";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
