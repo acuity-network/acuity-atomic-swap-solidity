@@ -14,16 +14,16 @@ contract AccountProxy {
         acuityAtomicSwapERC20 = _acuityAtomicSwapERC20;
     }
 
-    function unlockByRecipient(ERC20 token, address sender, bytes32 secret, uint timeout)
+    function unlock(ERC20 token, address sender, bytes32 secret, uint timeout)
         external
     {
-        acuityAtomicSwapERC20.unlockByRecipient(token, sender, secret, timeout);
+        acuityAtomicSwapERC20.unlock(token, sender, secret, timeout);
     }
 
-    function declineByRecipient(ERC20 token, address sender, bytes32 hashedSecret, uint timeout)
+    function decline(ERC20 token, address sender, bytes32 hashedSecret, uint timeout)
         external
     {
-        acuityAtomicSwapERC20.declineByRecipient(token, sender, hashedSecret, timeout);
+        acuityAtomicSwapERC20.decline(token, sender, hashedSecret, timeout);
     }
 
 }
@@ -102,7 +102,8 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint value = 10;
 
         acuityAtomicSwapERC20.lockBuy(dummyToken, address(account0), hashedSecret, timeout, value, hex"1234", 1);
-        assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), value);
+        bytes32 lockId = keccak256(abi.encode(dummyToken, address(this), address(account0), hashedSecret, timeout));
+        assertEq(acuityAtomicSwapERC20.getLockValue(lockId), value);
     }
 
     function testControlLockSellLockAlreadyExists() public {
@@ -125,89 +126,91 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint value = 10;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, value, assetId, hex"1234");
-        assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), value);
+        bytes32 lockId = keccak256(abi.encode(dummyToken, address(this), address(account0), hashedSecret, timeout));
+        assertEq(acuityAtomicSwapERC20.getLockValue(lockId), value);
     }
 
-    function testControlDeclineByRecipientLockNotFound() public {
+    function testControlDeclineLockNotFound() public {
         bytes32 assetId = hex"1234";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
         uint value = 10;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, value, assetId, hex"1234");
-        account0.declineByRecipient(dummyToken, address(this), hashedSecret, timeout);
+        account0.decline(dummyToken, address(this), hashedSecret, timeout);
     }
 
-    function testFailDeclineByRecipientLockNotFound() public {
+    function testFailDeclineLockNotFound() public {
         bytes32 assetId = hex"1234";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
         uint value = 10;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, value, assetId, hex"1234");
-        account0.declineByRecipient(dummyToken, address(this), hashedSecret, timeout);
-        account0.declineByRecipient(dummyToken, address(this), hashedSecret, timeout);
+        account0.decline(dummyToken, address(this), hashedSecret, timeout);
+        account0.decline(dummyToken, address(this), hashedSecret, timeout);
     }
 
-    function testDeclineByRecipient() public {
+    function testDecline() public {
         bytes32 assetId = hex"1234";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
         uint value = 10;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, value, assetId, hex"1234");
-        assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), value);
+        bytes32 lockId = keccak256(abi.encode(dummyToken, address(this), address(account0), hashedSecret, timeout));
+        assertEq(acuityAtomicSwapERC20.getLockValue(lockId), value);
 
         assertEq(dummyToken.balanceOf(address(acuityAtomicSwapERC20)), 10);
         uint startBalance = dummyToken.balanceOf(address(this));
-        account0.declineByRecipient(dummyToken, address(this), hashedSecret, timeout);
-        assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), 0);
+        account0.decline(dummyToken, address(this), hashedSecret, timeout);
+        assertEq(acuityAtomicSwapERC20.getLockValue(lockId), 0);
         assertEq(dummyToken.balanceOf(address(acuityAtomicSwapERC20)), 0);
         assertEq(dummyToken.balanceOf(address(this)), startBalance + value);
     }
 
-    function testControlUnlockBySenderLockNotFound() public {
+    function testControlUnlockLockNotFound() public {
         bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.unlockBySender(dummyToken, address(account0), secret, timeout);
+        account0.unlock(dummyToken, address(this), secret, timeout);
     }
 
-    function testFailUnlockBySenderLockNotFound() public {
+    function testFailUnlockLockNotFound() public {
         bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.unlockBySender(dummyToken, address(account0), secret, timeout);
-        acuityAtomicSwapERC20.unlockBySender(dummyToken, address(account0), secret, timeout);
+        account0.unlock(dummyToken, address(this), secret, timeout);
+        account0.unlock(dummyToken, address(this), secret, timeout);
     }
 
-    function testControlUnlockBySenderTimedOut() public {
+    function testControlUnlockTimedOut() public {
         bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.unlockBySender(dummyToken, address(account0), secret, timeout);
+        account0.unlock(dummyToken, address(this), secret, timeout);
     }
 
-    function testFailUnlockBySenderTimedOut() public {
+    function testFailUnlockTimedOut() public {
         bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.unlockBySender(dummyToken, address(account0), secret, timeout);
+        account0.unlock(dummyToken, address(this), secret, timeout);
     }
 
-    function testUnlockBySender() public {
+    function testUnlock() public {
         bytes32 assetId = hex"1234";
         bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -215,117 +218,59 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint value = 10;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, value, assetId, hex"1234");
-        assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), value);
+        bytes32 lockId = keccak256(abi.encode(dummyToken, address(this), address(account0), hashedSecret, timeout));
+        assertEq(acuityAtomicSwapERC20.getLockValue(lockId), value);
 
         assertEq(dummyToken.balanceOf(address(acuityAtomicSwapERC20)), 10);
         uint startBalance = dummyToken.balanceOf(address(account0));
-        acuityAtomicSwapERC20.unlockBySender(dummyToken, address(account0), secret, timeout);
-        assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), 0);
+        account0.unlock(dummyToken, address(this), secret, timeout);
+        assertEq(acuityAtomicSwapERC20.getLockValue(lockId), 0);
         assertEq(dummyToken.balanceOf(address(acuityAtomicSwapERC20)), 0);
         assertEq(dummyToken.balanceOf(address(account0)), startBalance + 10);
     }
 
-    function testControlUnlockByRecipientLockNotFound() public {
-        bytes32 assetId = hex"1234";
-        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
-        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
-        uint timeout = block.timestamp + 1;
-
-        acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        account0.unlockByRecipient(dummyToken, address(this), secret, timeout);
-    }
-
-    function testFailUnlockByRecipientLockNotFound() public {
-        bytes32 assetId = hex"1234";
-        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
-        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
-        uint timeout = block.timestamp + 1;
-
-        acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        account0.unlockByRecipient(dummyToken, address(this), secret, timeout);
-        account0.unlockByRecipient(dummyToken, address(this), secret, timeout);
-    }
-
-    function testControlUnlockByRecipientTimedOut() public {
-        bytes32 assetId = hex"1234";
-        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
-        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
-        uint timeout = block.timestamp + 1;
-
-        acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        account0.unlockByRecipient(dummyToken, address(this), secret, timeout);
-    }
-
-    function testFailUnlockByRecipientTimedOut() public {
-        bytes32 assetId = hex"1234";
-        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
-        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
-        uint timeout = block.timestamp;
-
-        acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        account0.unlockByRecipient(dummyToken, address(this), secret, timeout);
-    }
-
-    function testUnlockByRecipient() public {
-        bytes32 assetId = hex"1234";
-        bytes32 secret = hex"4b1694df15172648181bcb37868b25d3bd9ff95d0f10ec150f783802a81a07fb";
-        bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
-        uint timeout = block.timestamp + 1;
-        uint value = 10;
-
-        acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, value, assetId, hex"1234");
-        assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), value);
-
-        assertEq(dummyToken.balanceOf(address(acuityAtomicSwapERC20)), 10);
-        uint startBalance = dummyToken.balanceOf(address(account0));
-        account0.unlockByRecipient(dummyToken, address(this), secret, timeout);
-        assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), 0);
-        assertEq(dummyToken.balanceOf(address(acuityAtomicSwapERC20)), 0);
-        assertEq(dummyToken.balanceOf(address(account0)), startBalance + 10);
-    }
-
-    function testControlTimeoutValueLockNotFound() public {
+    function testControlRetrieveLockNotFound() public {
         bytes32 assetId = hex"1234";
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.retrieve(dummyToken, address(account0), hashedSecret, timeout);
     }
 
-    function testFailTimeoutValueLockNotFound() public {
+    function testFailRetrieveLockNotFound() public {
         bytes32 assetId = hex"1234";
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
-        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.retrieve(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.retrieve(dummyToken, address(account0), hashedSecret, timeout);
     }
 
-    function testControlTimeoutValueNotTimedOut() public {
+    function testControlRetrieveNotTimedOut() public {
         bytes32 assetId = hex"1234";
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.retrieve(dummyToken, address(account0), hashedSecret, timeout);
     }
 
-    function testFailTimeoutValueNotTimedOut() public {
+    function testFailRetrieveNotTimedOut() public {
         bytes32 assetId = hex"1234";
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
         uint timeout = block.timestamp + 1;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, 10, assetId, hex"1234");
-        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.retrieve(dummyToken, address(account0), hashedSecret, timeout);
     }
 
-    function testTimeoutValue() public {
+    function testRetrieve() public {
         bytes32 assetId = hex"1234";
 
         bytes32 hashedSecret = hex"094cd46013683e3929f474bf04e9ff626a6d7332c195dfe014e4b4a3fbb3ea54";
@@ -333,10 +278,11 @@ contract AcuityAtomicSwapERC20Test is DSTest {
         uint value = 10;
 
         acuityAtomicSwapERC20.lockSell(dummyToken, address(account0), hashedSecret, timeout, value, assetId, hex"1234");
-        assertEq(acuityAtomicSwapERC20.getLockValue(dummyToken, address(this), address(account0), hashedSecret, timeout), value);
+        bytes32 lockId = keccak256(abi.encode(dummyToken, address(this), address(account0), hashedSecret, timeout));
+        assertEq(acuityAtomicSwapERC20.getLockValue(lockId), value);
 
         uint startBalance = dummyToken.balanceOf(address(this));
-        acuityAtomicSwapERC20.timeoutBySender(dummyToken, address(account0), hashedSecret, timeout);
+        acuityAtomicSwapERC20.retrieve(dummyToken, address(account0), hashedSecret, timeout);
         assertEq(dummyToken.balanceOf(address(this)), startBalance + value);
     }
 
