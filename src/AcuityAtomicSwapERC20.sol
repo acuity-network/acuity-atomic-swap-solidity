@@ -89,9 +89,20 @@ contract AcuityAtomicSwapERC20 {
     error LockNotTimedOut(bytes32 lockId);
 
     /**
-     * @dev
+     * @dev Token transfer in has failed.
+     * @param token Transfer token.
+     * @param from Transfer source.
+     * @param value Tramsfer value.
      */
-    error TokenTransferFailed(ERC20 token, address from, address to, uint value);
+    error TransferInFailed(ERC20 token, address from, uint value);
+
+    /**
+     * @dev Token transfer out has failed.
+     * @param token Transfer token.
+     * @param to Transfer recipient.
+     * @param value Tramsfer value.
+     */
+    error TransferOutFailed(ERC20 token, address to, uint value);
 
     /**
      * @dev Lock value to buy from a sell order.
@@ -112,7 +123,7 @@ contract AcuityAtomicSwapERC20 {
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Transfer value.
         (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(ERC20.transferFrom.selector, msg.sender, address(this), value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, msg.sender, address(this), value);
+        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TransferInFailed(token, msg.sender, value);
         // Lock value.
         lockIdValue[lockId] = value;
         // Log info.
@@ -138,7 +149,7 @@ contract AcuityAtomicSwapERC20 {
         if (lockIdValue[lockId] != 0) revert LockAlreadyExists(lockId);
         // Transfer value.
         (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(ERC20.transferFrom.selector, msg.sender, address(this), value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, msg.sender, address(this), value);
+        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TransferInFailed(token, msg.sender, value);
         // Lock value.
         lockIdValue[lockId] = value;
         // Log info.
@@ -165,7 +176,7 @@ contract AcuityAtomicSwapERC20 {
         delete lockIdValue[lockId];
         // Transfer value.
         (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(ERC20.transfer.selector, creator, value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, address(this), creator, value);
+        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TransferOutFailed(token, creator, value);
         // Log info.
         emit Decline(token, creator, msg.sender, lockId);
     }
@@ -192,7 +203,7 @@ contract AcuityAtomicSwapERC20 {
         delete lockIdValue[lockId];
         // Transfer value.
         (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(ERC20.transfer.selector, msg.sender, value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, address(this), msg.sender, value);
+        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TransferOutFailed(token, msg.sender, value);
         // Log info.
         emit Unlock(token, creator, msg.sender, lockId, secret);
     }
@@ -219,7 +230,7 @@ contract AcuityAtomicSwapERC20 {
         delete lockIdValue[lockId];
         // Transfer value.
         (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(ERC20.transfer.selector, msg.sender, value));
-        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed(token, address(this), msg.sender, value);
+        if (!success || (data.length != 0 && !abi.decode(data, (bool)))) revert TransferOutFailed(token, msg.sender, value);
         // Log info.
         emit Retrieve(token, msg.sender, recipient, lockId);
     }
