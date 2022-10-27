@@ -15,14 +15,14 @@ contract AccountProxy {
 
     receive() payable external {}
 
-    function unlock(address sender, bytes32 secret, uint timeout)
+    function unlock(address creator, bytes32 secret, uint timeout)
         external
     {
-        acuityAtomicSwap.unlock(sender, secret, timeout);
+        acuityAtomicSwap.unlock(creator, secret, timeout);
     }
 
-    function decline(address sender, bytes32 hashedSecret, uint timeout) external {
-        acuityAtomicSwap.decline(sender, hashedSecret, timeout);
+    function decline(address creator, bytes32 hashedSecret, uint timeout) external {
+        acuityAtomicSwap.decline(creator, hashedSecret, timeout);
     }
 
 }

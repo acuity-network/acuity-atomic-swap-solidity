@@ -14,16 +14,16 @@ contract AccountProxy {
         acuityAtomicSwapERC20 = _acuityAtomicSwapERC20;
     }
 
-    function unlock(ERC20 token, address sender, bytes32 secret, uint timeout)
+    function unlock(ERC20 token, address creator, bytes32 secret, uint timeout)
         external
     {
-        acuityAtomicSwapERC20.unlock(token, sender, secret, timeout);
+        acuityAtomicSwapERC20.unlock(token, creator, secret, timeout);
     }
 
-    function decline(ERC20 token, address sender, bytes32 hashedSecret, uint timeout)
+    function decline(ERC20 token, address creator, bytes32 hashedSecret, uint timeout)
         external
     {
-        acuityAtomicSwapERC20.decline(token, sender, hashedSecret, timeout);
+        acuityAtomicSwapERC20.decline(token, creator, hashedSecret, timeout);
     }
 
 }

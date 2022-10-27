@@ -10,52 +10,52 @@ contract AcuityAtomicSwap {
 
     /**
      * @dev Value has been locked with sell asset info.
-     * @param sender Account that locked the value.
+     * @param creator Account that locked the value.
      * @param recipient Account to receive the value.
      * @param hashedSecret Hash of the secret required to unlock the value.
-     * @param timeout Time after which sender can retrieve the value.
+     * @param timeout Time after which creator can retrieve the value.
      * @param value Value being locked.
      * @param sellAssetId assetId the buyer is buying
      * @param sellPrice Unit price the buyer is paying for the asset.
      */
-    event LockBuy(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 sellAssetId, uint sellPrice);
+    event LockBuy(address indexed creator, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 sellAssetId, uint sellPrice);
 
     /**
      * @dev Value has been locked.
-     * @param sender Account that locked the value.
+     * @param creator Account that locked the value.
      * @param recipient Account to receive the value.
      * @param hashedSecret Hash of the secret required to unlock the value.
-     * @param timeout Time after which sender can retrieve the value.
+     * @param timeout Time after which creator can retrieve the value.
      * @param value Value being locked.
      * @param buyAssetId The asset of the buy lock this lock is responding to.
      * @param buyLockId The buy lock this lock is responding to.
      */
-    event LockSell(address indexed sender, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 buyAssetId, bytes32 buyLockId);
+    event LockSell(address indexed creator, address indexed recipient, bytes32 hashedSecret, uint timeout, uint value, bytes32 buyAssetId, bytes32 buyLockId);
 
     /**
      * @dev Lock has been declined by the recipient.
-     * @param sender Account that locked the value.
+     * @param creator Account that locked the value.
      * @param recipient Account to receive the value.
      * @param lockId Intrinisic lockId.
      */
-    event Decline(address indexed sender, address indexed recipient, bytes32 lockId);
+    event Decline(address indexed creator, address indexed recipient, bytes32 lockId);
 
     /**
      * @dev Value has been unlocked by the recipient.
-     * @param sender Account that locked the value.
+     * @param creator Account that locked the value.
      * @param recipient Account that received the value.
      * @param lockId Intrinisic lockId.
      * @param secret The secret used to unlock the value.
      */
-    event Unlock(address indexed sender, address indexed recipient, bytes32 lockId, bytes32 secret);
+    event Unlock(address indexed creator, address indexed recipient, bytes32 lockId, bytes32 secret);
 
     /**
      * @dev Value has been retrieved from a timed-out lock.
-     * @param sender Account that locked the value.
+     * @param creator Account that locked the value.
      * @param recipient Account to receive the value.
      * @param lockId Intrinisic lockId.
      */
-    event Retrieve(address indexed sender, address indexed recipient, bytes32 lockId);
+    event Retrieve(address indexed creator, address indexed recipient, bytes32 lockId);
 
     /**
      * @dev Value has already been locked with this lockId.
@@ -126,39 +126,39 @@ contract AcuityAtomicSwap {
     }
 
     /**
-     * @dev Transfer value back to the sender (called by recipient).
-     * @param sender Sender of the value.
+     * @dev Transfer value back to the creator (called by recipient).
+     * @param creator Sender of the value.
      * @param hashedSecret Hash of the secret.
      * @param timeout Timeout of the lock.
      */
-    function decline(address sender, bytes32 hashedSecret, uint timeout)
+    function decline(address creator, bytes32 hashedSecret, uint timeout)
         external
     {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(sender, msg.sender, hashedSecret, timeout));
+        bytes32 lockId = keccak256(abi.encode(creator, msg.sender, hashedSecret, timeout));
         // Get lock value.
         uint value = lockIdValue[lockId];
         // Check if the lock exists.
         if (value == 0) revert LockNotFound(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
-        // Transfer the value back to the sender.
-        payable(sender).transfer(value);
+        // Transfer the value back to the creator.
+        payable(creator).transfer(value);
         // Log info.
-        emit Decline(sender, msg.sender, lockId);
+        emit Decline(creator, msg.sender, lockId);
     }
 
     /**
      * @dev Transfer value from lock to recipient (called by recipient).
-     * @param sender Sender of the value.
+     * @param creator Sender of the value.
      * @param secret Secret to unlock the value.
      * @param timeout Timeout of the lock.
      */
-    function unlock(address sender, bytes32 secret, uint timeout)
+    function unlock(address creator, bytes32 secret, uint timeout)
         external
     {
         // Calculate lockId.
-        bytes32 lockId = keccak256(abi.encode(sender, msg.sender, keccak256(abi.encode(secret)), timeout));
+        bytes32 lockId = keccak256(abi.encode(creator, msg.sender, keccak256(abi.encode(secret)), timeout));
         // Get lock value.
         uint value = lockIdValue[lockId];
         // Check if the lock exists.
@@ -170,11 +170,11 @@ contract AcuityAtomicSwap {
         // Transfer the value.
         payable(msg.sender).transfer(value);
         // Log info.
-        emit Unlock(sender, msg.sender, lockId, secret);
+        emit Unlock(creator, msg.sender, lockId, secret);
     }
 
     /**
-     * @dev Transfer value from expired lock back to sender.
+     * @dev Transfer value from expired lock back to creator.
      * @param recipient Recipient of the value.
      * @param hashedSecret Hash of secret to unlock the value.
      * @param timeout Timeout of the lock.
