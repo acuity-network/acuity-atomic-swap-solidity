@@ -164,7 +164,7 @@ contract AcuityAtomicSwap {
         // Check if the lock exists.
         if (value == 0) revert LockNotFound(lockId);
         // Check lock has not timed out.
-        if (timeout <= block.timestamp) revert LockTimedOut(lockId);
+        if (block.timestamp >= timeout) revert LockTimedOut(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer value.
@@ -189,7 +189,7 @@ contract AcuityAtomicSwap {
         // Check if the lock exists.
         if (value == 0) revert LockNotFound(lockId);
         // Check lock has timed out.
-        if (timeout > block.timestamp) revert LockNotTimedOut(lockId);
+        if (block.timestamp < timeout) revert LockNotTimedOut(lockId);
         // Delete lock.
         delete lockIdValue[lockId];
         // Transfer value.
